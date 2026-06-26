@@ -1,7 +1,8 @@
 # PM-AI 開發治理包 · 設計底稿(方案 B)
 
-> 狀態:🚧 進行中 checkpoint ｜ 更新:2026-06-26 ｜ repo 外個人底稿,未 commit
+> 狀態:🚧 進行中 checkpoint ｜ 更新:2026-06-27 ｜ 正本在 builder-pm repo,本機 cora-governance-notes 為同步副本
 > 由 brainstorming 對話累積;本檔只記「已拍板」與「待辦」,不重述討論過程。
+> 2026-06-27 新增 §2.5 Harness 角色分層(基於 PM 手繪心智圖 + 全 `.claude/` 掃描)。
 
 ---
 
@@ -31,6 +32,62 @@ D. 之後(會學習)
   10. 踩過的雷寫進 repo 的 LESSONS;同雷 ≥2 次 → 升級成規則/關卡/skill/升包
 ```
 口訣:**想清楚 → 有紀律 → 可信乾淨 → 會學習**
+
+## 2.5 Harness:角色分層與 block 分流(agent 團隊)— ✅ 鎖定(2026-06-27)
+
+> 來源:PM 手繪 harness 心智圖(2026-06-27)+ cora `.claude/HARNESS-ROLES.md`(5 角 / 3 紀律)+ 全 `.claude/` 掃描(實證:9 個 agent 定義骨架 100% 一致、零例外)。
+
+### 2.5.1 交付線 = 4 個角色的流水線
+
+```
+你(人)⇄ Coordinator ──派工──→ Planner ──派工──→ Generator ──提交審查──→ Evaluator
+        (Main agent)         (PM agent)        (Dev / UX agent)      (code reviewer)
+          ↑                  brainstorm        SDD + TDD            交互檢查
+          │                  → PRD/SPEC                                 │
+          └────────────────── 發現 block,回報 ←──────────────────────────┘
+```
+
+- **角色 ≠ agent 名字**(沿用 cora 正交原則):同一個 agent 可戴不同帽子。cora 原本 5 角的第 5 角「Read-only 探索」在本包併入核心原則 #4(探索模式),交付線上只剩 4 角。
+
+### 2.5.2 block 分流:Coordinator 是「分流大腦」,不是傳聲筒
+
+Evaluator 發現 block **不直接踢回 Generator**(那會逼「寫 code 的」去修「規格沒寫清楚」的問題 → 無限迴圈)。改成回報 Coordinator,由 Coordinator 判**根因在哪一層**再分流:
+
+| 根因層 | 症狀 | 踢回 |
+|--------|------|------|
+| 實作層 | code 寫錯 / 沒跑過 test / 漏 edge case | → Generator 修 |
+| 規格層 | SPEC 沒講清楚 / 自相矛盾 / 漏了某情境 | → Planner 補 SPEC |
+| 判斷層 | 兩 AI 各執一詞 / 商業取捨 / 動到高風險面 | → escalate 給 Human |
+
+**逃生門(防 Coordinator 自己誤判)**:同一個 block 繞 ≥ 2 次仍未解 → **強制 escalate Human**,Coordinator 不准再自己分流。對應 cora「連續 2 次同問題 = 規則/判斷本身有問題」的計數邏輯,也呼應「禁止反射性 retry,先產根因分析」。
+
+### 2.5.3 三條交接鐵律(焊進每個 agent 檔,不靠 PM 記)
+
+1. **Generator 不自評** —— 回報只陳述事實(跑了什麼指令 + 結果),禁「looks good / 應該沒問題」品質判斷。
+2. **Generator → Evaluator 強制交接** —— Evaluator 必須**與 Generator 不同 agent**;PASS / FAIL 都要附可驗證證據(指令輸出 + 引用行號)。
+3. **Planner / Evaluator 不寫 production code** —— Evaluator 發現 bug **不准自己改**,回報 Coordinator 重新派 Generator(保獨立性)。
+
+### 2.5.4 通用 vs cora:框是通用、框下的工具是 cora 填的
+
+PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,不是角色本身 —— 這天然分好了通用核心與專案配置:
+
+| 角色框(🟢 通用·進核心) | cora 的填法(🔴 可抽換) | 在通用包是 |
+|------|------|------|
+| Coordinator | Main agent · PM 直接對話 | 核心 + 名冊 config(誰當) |
+| Planner | PM agent · `brainstorming` → PRD/SPEC | 核心 + 模組⑤ |
+| Generator | dev / UX agent · `openspec` 的 SDD+TDD | 核心 + 模組③ + config(用不用 openspec)|
+| Evaluator | code reviewer · Claude × Codex 交互檢查 | 核心 + 模組② |
+
+### 2.5.5 放進包的三層
+
+- **核心 +1 鐵律**:4 帽不混戴 / 最少做到「寫的 ≠ 驗的」(永遠在,連單人專案配一個 AI 也適用 —— 用另一個 session/agent 來驗即達成)。
+- **模組②(雙人驗證)** 吃下 鐵律 1+2 細節 + 「**空白員工合約**」agent 骨架模板(回報紀律 / 禁止 / Composition 三段預先填好,技術棧留白)。
+- **模組④(多 agent 派工)** 吃下 角色表 + 6 派工 pattern(Pipeline / Fan-out / Expert Pool / Producer-Reviewer / Supervisor / Hierarchical)+ 角色↔agent 對照表模板;標「專案夠大才開」。
+- **名冊內容**(養哪些 agent、什麼技術棧)= **專案 config**,不進通用包。
+
+### 2.5.6 待補的洞(對應 PM 圖)
+
+- **洞 2:工具 vs 紀律要分層** —— PM 圖把 Generator 寫成「轉成 openspec 的 SDD+TDD」,但 openspec 綁特定 CLI(掃描歸 cora 專屬)。通用包要把「**SDD+TDD 是紀律**」與「**openspec 是 cora 選的工具**」分兩層,別專案抽換工具不影響紀律。cora 自己照用 openspec 沒問題。
 
 ## 3. 模組清單(選用,按專案形狀開)— ✅ 鎖定(細節可微調)
 
@@ -100,7 +157,9 @@ D. 之後(會學習)
 
 ## 7. 待辦 open items
 
-- [ ] 在 GitHub 開新 repo,把這個包做成真的可重用專案(← PM 2026-06-26 決定)
-- [ ] 把核心憲章 / 6 模組 / 2 攔截 / LESSONS 模板 寫成實體檔案
-- [ ] 套回 cora 的對照搬家(上方第 6 節 3 件事)
+- [x] 在 GitHub 開新 repo(builder-pm),把這個包做成真的可重用專案(← PM 2026-06-26 決定)
+- [x] Harness 角色分層定案 → §2.5(← PM 手繪圖 2026-06-27)
+- [ ] 把核心憲章 / 6 模組 / 2 攔截 / LESSONS 模板 / **agent 骨架模板(空白員工合約)** 寫成實體檔案
+- [ ] 洞 2:核心把「SDD+TDD 紀律」與「openspec 工具」分兩層寫(§2.5.6)
+- [ ] 套回 cora 的對照搬家(上方第 6 節 3 件事;可用全 `.claude/` 掃描結果當底稿)
 - [ ] 模組清單細節微調(是否增減)
