@@ -1,9 +1,10 @@
 # PM-AI 開發治理包 · 設計底稿(方案 B)
 
-> 狀態:🚧 進行中 checkpoint ｜ 更新:2026-06-27 ｜ 正本在 builder-pm repo,本機 cora-governance-notes 為同步副本
+> 狀態:🚧 進行中 checkpoint ｜ 更新:2026-06-28 ｜ 正本在 builder-pm repo,本機 cora-governance-notes 為同步副本
 > 由 brainstorming 對話累積;本檔只記「已拍板」與「待辦」,不重述討論過程。
 > 2026-06-27 新增 §2.5 Harness 角色分層(基於 PM 手繪心智圖 + 全 `.claude/` 掃描)。
 > 2026-06-27 重心校正:forward 種新專案為主線(非回套 cora);新增 §1.5 種子骨架;盲區報告 `docs/gap-audit.md`。
+> 2026-06-28 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `docs/inventory-deep.md`;本檔套入 6 條修正(模組⑥跨樹依賴 / OpenSpec 雙軌 / 雙語+去硬編+未啟用≠死碼 / error-patterns 修正 / fail-closed 閘+機密衛生 / 派工貼引文+model 分層)。
 
 ---
 
@@ -28,9 +29,12 @@
 - **冷啟動 onboarding 流程**:第一份 SPEC / CONVENTIONS / SYSTEM 怎麼起、裝包到能上工的引導(模板 ≠ 流程)
 - **domain 知識庫容器 + context 載入路由**(空模板;Planner/Generator 的領域脈絡靠這層供給)
 - **編碼約定 / 架構禁區空模板**(每專案必填,照抄通用版 = 失效)
+- **雙語慣例表**(繁中產品 day1 必備):code 註解 / godoc / 變數 = 英文;markdown 正文 / commit / PR / issue = 繁中;yaml structural keys / enum / ID 保留英文。附反例「PM 講中文 ≠ 註解也寫中文」;派工 prompt 模板要預填此邊界(否則派 sub-agent 收到全英文交付)
+- **provenance 去硬編紀律**:做實體檔前全 repo 掃 `/Users/`、repo slug、token/key,一律改 templated/env 佔位;種子 settings 模板絕不含明文 secret(cora 現狀 `settings.local.json` 明文存 key = 反例)
+- **盤點分類紀律「未啟用機制 ≠ 死碼」**:逐檔裁決前先看讀/寫路徑是否接線;「地基鋪好尚未接線」(如 cora `error-patterns.json`)不是死碼,別反射性砍(此尺直接防 §6 對照搬家砍錯承重牆)
 
 **🌳 該長出來(不 ship,隨專案長):**
-- 多模型 / `.codex` 第二治理樹(加第二個模型家族才需要)
+- 多模型 / `.codex` 第二治理樹(加第二個模型家族才需要)⚠️ 但**不是純可選**:模組⑥(PR 防呆)對 `.codex/review-agent/lib/github.cjs` 有 live `require` 依賴 → 要帶 ⑥ 就得內聯該 helper 或連帶拉進這支 lib,不能「砍 .codex + 留 ⑥」並存(見 §3 註)
 - 契約一致性 gate / codegen drift(有規格契約才需要)
 - 跨模型 reviewer 的 false-positive 校準 / Rescue 例外(有第二模型才需要)
 - drift 容忍中間層、real-path UAT、Engineer-led 輕量路徑、併發鎖定 / worktree、branch hygiene 三段式
@@ -91,6 +95,8 @@ Evaluator 發現 block **不直接踢回 Generator**(那會逼「寫 code 的」
 
 **逃生門(防 Coordinator 自己誤判)**:同一個 block 繞 ≥ 2 次仍未解 → **強制 escalate Human**,Coordinator 不准再自己分流。對應 cora「連續 2 次同問題 = 規則/判斷本身有問題」的計數邏輯,也呼應「禁止反射性 retry,先產根因分析」。
 
+**派工紀律(讓分流不淪空殼)**:Coordinator / Planner 派 Generator 時,要把該讀的 SPEC / 契約引文**摘要貼進 prompt 內文**,不是丟一個連結 —— 實證(cora #214)丟連結 → LLM 跳讀漏掉某段 → 違約。「有 context 路由」不等於「路由真有效」。
+
 ### 2.5.3 三條交接鐵律(焊進每個 agent 檔,不靠 PM 記)
 
 1. **Generator 不自評** —— 回報只陳述事實(跑了什麼指令 + 結果),禁「looks good / 應該沒問題」品質判斷。
@@ -108,6 +114,8 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 | Generator | dev / UX agent · `openspec` 的 SDD+TDD | 核心 + 模組③ + config(用不用 openspec)|
 | Evaluator | code reviewer · Claude × Codex 交互檢查 | 核心 + 模組② |
 
+> **model 分層 by role(harness 成本/延遲槓桿)**:cora 用高檔模型(opus)給 Planner / 契約決策(architect / product-copilot)、標準檔(sonnet)給 Generator / Evaluator / 協調(dev / reviewer / qa / main)。這是「依角色調 harness 檔次」的現成成本槓桿 → 種子的名冊 config 該預留「角色 → 模型檔次」欄位。
+
 ### 2.5.5 放進包的三層
 
 - **核心 +1 鐵律**:4 帽不混戴 / 最少做到「寫的 ≠ 驗的」(永遠在,連單人專案配一個 AI 也適用 —— 用另一個 session/agent 來驗即達成)。
@@ -118,6 +126,7 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 ### 2.5.6 待補的洞(對應 PM 圖)
 
 - **洞 2:工具 vs 紀律要分層** —— PM 圖把 Generator 寫成「轉成 openspec 的 SDD+TDD」,但 openspec 綁特定 CLI(掃描歸 cora 專屬)。通用包要把「**SDD+TDD 是紀律**」與「**openspec 是 cora 選的工具**」分兩層,別專案抽換工具不影響紀律。cora 自己照用 openspec 沒問題。
+- **洞 3:自家 SPEC 系統 vs OpenSpec「二選一」** —— cora 同時有自家 `docs/04-specs/SPEC-*` 與一整套 OpenSpec(CLI + `openspec/` 目錄 + propose/apply/archive/explore 四件套 skill),兩套平行且**命令撞名**(`explore` vs `opsx:explore`、`cora-start` vs `opsx:propose`)。種子**預設只帶一套** spec/propose/explore 流程;OpenSpec 整套標為 **cora 選用工具(grow)**,新專案明確要才開,否則兩套打架、PM 困惑。
 
 ## 3. 模組清單(選用,按專案形狀開)— ✅ 鎖定(細節可微調)
 
@@ -132,9 +141,13 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 
 開法範例:簡單新專案=核心+①②;cora=核心+全開。
 
+> ⚠️ **模組⑥ 不是乾淨獨立模組**(2026-06-28 deep-inventory):cora `pr-merge-harness/check-pr-merge.cjs` 頂層 `require('.codex/review-agent/lib/github.cjs')`(跨 `.codex` 樹 live 依賴)。種子化 ⑥ 時要嘛**內聯** github helper、要嘛標明**連帶拉進**該 lib;不可「砍 .codex + 留 ⑥」並存。做實體檔前先 `grep -rE "require|import"` 把所有跨樹/跨模組依賴攤出來,別把任何模組當乾淨獨立。
+
 ## 4. 記憶 / 學習模組 — ✅ 鎖定(本次重點,最完整)
 
 > ⚠️ 2026-06-27 校正(gap-audit):(1) 本節「半自動捕捉」的 hook 在 cora **不存在**(無 Stop/SessionEnd hook、捕捉 100% 手寫且停更 45 天)→ 屬**淨新建待實作**,非從 cora 萃取;(2) 畢業只有「升級」是單向缺陷,需補對稱**降級**(零遵循/高 override 的規則自動列鬆綁候選),見 §1.5。
+>
+> ⚠️ 2026-06-28 補(deep-inventory):(3) **「純建議=零執法」已有 cora 鐵證**(從風險臆測升為已驗證依據):main agent 連續 5 次違反 PM「不要寫 memory」指示 → `ai-status-index` 違規表結論「靠自律已證明反覆失守」→ cora 建 `block-memory-write` PreToolUse hook 物理攔截。即 **DISCIPLINE 在 LLM 上會系統性失守,必要時得用 hook 兜底**。(4) `error-patterns.json` **不是死碼**(修正 gap-audit 駁回):cora `knowledge.cjs` 有完整 load/search/add、`review-packet.cjs` 已把它組進 live packet → **讀路徑已接、寫路徑未啟用、零資料**;種子刻意不鏡像的理由改成「不重建 cora 的自我累積 bug 知識庫(屬 grow,有第二模型 reviewer 才需要)」,非「死碼所以不管」。
 
 **存**:markdown + YAML frontmatter,**進 repo、每專案各有**(不放 ~/.claude,換機不丟、交接看得到)。
 ```
@@ -178,6 +191,10 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 - ② 偵測有無程式碼改動 + commit 訊息有無簽核字樣;沿用 cora `pre-commit-codex-check` 模式,把「codex」抽象成「evaluator」。跳關沿用(純文件/翻譯/rename / PM 明文 override / 工程師自負+留紀錄)。
 - 安裝:包附「一鍵設定」,丟進新專案就自動開啟,不用手接線。
 
+**補(2026-06-28 deep-inventory):**
+- **第三類「人工 fail-closed 啟用閘」(grow,非自動關卡)**:cora 對資安敏感功能(SES 憑證 / SSRF / Git push)採「code 已 merge 但需真人資安工程師簽核才准**啟用**」紀律(合入 ≠ 上線)。這是不靠 code、純靠 PM/工程紀律的安全邊界,與契約 gate(gap-audit B2)不同類;種子保留此 **pattern**,gate 內容隨專案長。
+- **機密進出衛生**:攔截① 只防 AI 產物**出站**;要再防(a)**入站** —— secret 貼進對話 / `.env` 進 repo;(b)**設定檔現狀** —— cora `settings.local.json` / `.mcp.json` 明文存 ClickUp key 是反例。種子 settings 模板**絕不含明文 key**,README 明標 cora 現狀為反面教材。
+
 ## 6. 套回 cora(選用後路,非主線)— ⬜ 待執行
 
 > 2026-06-27 重心校正後,「套回 cora」**降為選用後路**:主線是 forward 種新專案(§1 / §1.5)。若哪天要把輕量包裝回 cora 取代舊治理,以下仍適用,但不是這個包的存在理由。
@@ -193,6 +210,7 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 - [x] Harness 角色分層定案 → §2.5(← PM 手繪圖 2026-06-27)
 - [x] 重心校正 forward-first + 新增 §1.5 種子骨架(← PM 2026-06-27)
 - [x] 全治理盤點 → 28 盲區報告 `docs/gap-audit.md`
+- [x] 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `docs/inventory-deep.md`;套入 6 條修正(2026-06-28)
 - [ ] **種子缺陷 4 修**(學習迴圈補降級 / 冷啟動流程 / 捕捉引擎真的會動 / 跨專案版本治理)
 - [ ] 把種子骨架(§1.5 🌱 那串)寫成實體檔案 + agent 骨架模板(空白員工合約)
 - [ ] 洞 2:核心把「SDD+TDD 紀律」與「openspec 工具」分兩層寫(§2.5.6)
