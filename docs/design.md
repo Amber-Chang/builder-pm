@@ -8,6 +8,7 @@
 > 2026-06-28 新增 §5.5 Drift 守門 + `gates/drift-fact-check` 範本;翻 cora 出生史確認 **amber-stack = builder-pm v1**,v2 定位 = v1 種子 + 三個自我維持迴圈(防膨脹/學習/drift),見 §1。
 > 2026-06-28 新增 §4.1 防膨脹(規則降級)迴圈 + `loops/anti-bloat/` 範本(grounding:Hermes `Curator` OSS + cora 自身鐘擺 telemetry;雙背書)。
 > 2026-06-28 新增 §4.2 學習捕捉引擎 + `loops/learning-capture/` 範本(grounding:Hermes `background_review` 自動捕捉);**自我修正**舊筆記「Hermes 沒自動 nudge=行銷話術」之誤(Rule #12)。§1 北極星 PM 角色校準=治理包非 runtime。三迴圈設計全鎖定。
+> 2026-06-28 新增 §4.3 冷啟動 onboarding + 知識層成長偵測(種子缺陷 #2);grounding v1 `setup.sh` + cora `.context/` 真實成長史 + 三迴圈當成長引擎。修 v1「day-0 叫 PM 填 SYSTEM」早問 bug。偵測「何時該填」**誠實分級**:GLOSSARY/conventions 可確定性偵測、SYSTEM 是判斷題只能 proxy(Rule #12 不過度承諾 + §5.5 死殼鐵則)。
 
 ---
 
@@ -37,7 +38,7 @@
 - harness 4 角色 + Coordinator 分流(§2.5)—— PM 不寫 code 也驅動得動的工作流
 - 2 個硬關卡(§5)
 - 學習機制(§4)**且必須能升級也能降級**(零遵循的規則要自動鬆綁,否則新專案會長成重 cora)
-- **冷啟動 onboarding 流程**:第一份 SPEC / CONVENTIONS / SYSTEM 怎麼起、裝包到能上工的引導(模板 ≠ 流程)
+- **冷啟動 onboarding 流程**:第一份 SPEC / CONVENTIONS / SYSTEM 怎麼起、裝包到能上工的引導(模板 ≠ 流程)→ ✅ 設計鎖定 §4.3(薄起步 + 知識層成長偵測)
 - **domain 知識庫容器 + context 載入路由**(空模板;Planner/Generator 的領域脈絡靠這層供給)
 - **編碼約定 / 架構禁區空模板**(每專案必填,照抄通用版 = 失效)
 - **雙語慣例表**(繁中產品 day1 必備):code 註解 / godoc / 變數 = 英文;markdown 正文 / commit / PR / issue = 繁中;yaml structural keys / enum / ID 保留英文。附反例「PM 講中文 ≠ 註解也寫中文」;派工 prompt 模板要預填此邊界(否則派 sub-agent 收到全英文交付)
@@ -53,7 +54,7 @@
 
 **🔧 種子本身要補的缺陷(來自 gap-audit,做實體檔時處理):**
 - 學習迴圈對稱化(升級 + **降級** / 規則 fitness review)→ ✅ 設計鎖定 §4.1 + 🚧 prototype `loops/anti-bloat/`(照 Hermes Curator DNA + override 訊號)
-- 冷啟動流程(目前只有空模板,缺「怎麼起步」的流程)
+- 冷啟動流程(目前只有空模板,缺「怎麼起步」的流程)→ ✅ 設計鎖定 §4.3(薄起步 + 知識層成長偵測;修 v1「day-0 填 SYSTEM」早問 bug)· 🚧 prototype `loops/context-growth/` 待派工
 - 捕捉引擎要真的會動 —— **§4「半自動 hook 捕捉」cora 其實沒有** → ✅ 設計鎖定 §4.2 + 🚧 prototype `loops/learning-capture/`(grounded Hermes `background_review`,觸發走 Claude Code hook 非自建 runtime)
 - 跨專案版本治理(可重用包必備:核心/模組更新怎麼傳到 N 個已裝專案)
 
@@ -246,6 +247,64 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 
 > ⚠️ **2026-06-28 自我修正(Rule #12,對真 code 重查)**:本節舊筆記曾寫「Hermes 的 periodic nudge 是行銷話術、程式碼無此機制、捕捉 100% 靠顯式 /learn」—— **這是錯的**。`agent/background_review.py` + config(`memory.nudge_interval:10` 每 10 回合提醒存記憶、`memory.flush_min_turns:6` context 消失前 flush、`skills.creation_nudge_interval:15` 複雜任務後存 skill)證明 Hermes **有完整、可設定、自動週期的捕捉引擎**。詳見 §4.2。
 
+### 4.3 冷啟動 onboarding + 知識層成長偵測 — ✅ 設計鎖定(2026-06-28)
+
+> 種子缺陷 #2。grounding:v1 `amber-stack/setup.sh`(安裝半套已驗證)+ cora `.context/` **真實成長史**(逐檔實證,見下)+ §4.1/§4.2/§5.5 三迴圈(知識層的成長引擎)。放 §4 下因知識層**靠學習迴圈長**,與 §4.1/§4.2 同系統。
+
+**v1 的 bug(冷啟動為何被標成缺陷)**:`setup.sh` 結尾叫 PM「Next steps:填 SYSTEM.md / 填 GLOSSARY.md」—— 這是**早問 bug**:要 PM 在 day-0 填兩個那時根本沒資訊可填的檔(SYSTEM 要先有架構決策、GLOSSARY 要先 spec 過功能)。真實 day-0 PM 手上頂多**技術選型 + 第一版 PRD**。
+
+**修正後的序列(薄起步 → 邊做邊長):**
+
+```
+Day-0(薄)
+  setup.sh 選技術棧 + 專案名 → 裝 (A) 通用機制預填 + (B) 知識容器空殼 + git init
+  第一份產出 = 第一版 PRD(接 brainstorming);❌ 不在 day-0 填 SYSTEM/GLOSSARY
+Day-N(邊做邊長)
+  PRD → 第一份 SPEC → 第一次派工 → 邊建,(B) 知識層才長;三迴圈當成長引擎
+```
+
+裝下去兩類:**(A) 通用機制·預填**(核心憲章 / 4 角色 / 2 硬關卡 / 三迴圈 / 雙語慣例,每專案一樣、PM 不碰);**(B) 知識容器·空殼**(`.context/SYSTEM`、`GLOSSARY`、conventions/架構禁區、module specs,隨專案長)。
+
+**知識層四檔怎麼長(全有 cora 實證):**
+
+| 檔 | 觸發 → 怎麼長(JIT) | cora 實證 | 成長引擎 |
+|----|----------------------|----------|---------|
+| **module specs**(`SPEC-NNN`)| 要做新功能才寫該支 SPEC(逐功能、用到才寫)| SPEC-001→011 一路按功能加上來 | 模組⑤ / Planner |
+| **GLOSSARY** | SPEC 引入新術語 → 進表,每條指回正本 doc | 每列 `正確詞｜禁用｜Notes(PRD §)`;created 3/25→updated 4/21 長出 | §5.5 drift 守門 |
+| **conventions / 架構禁區** | 同類雷 ≥2 次 → 畢業成 convention | `engineer-style-patterns.md` 自述「**從 PR #341/#344/#345/#346 抽取**」,每條附 PR | §4 畢業↑ + §4.1 防膨脹↓ |
+| **SYSTEM.md** | 重大結構決策才補一節(低頻、人主導)| Apr 21 寫完後幾乎沒動 = 結構級 | architect 起草,PM 確認 |
+
+> **收口**:冷啟動之所以能「薄」,正因**三迴圈會在 day-N 把知識層長出來**。三迴圈不是跟冷啟動分開的兩件事 —— 它們**就是知識層的成長引擎**。v1=薄種子但不會長(PM 被丟在空模板前);v2=一樣薄的種子 **+ 會自己長知識層的三迴圈**。
+
+**偵測「何時該填」(PM 要求:harness 主動抓時機,非被動查表)— 誠實分級(沿 §5.5 A/B/C):**
+
+| 檔 | 訊號 | 可偵測性 | 怎麼偵測 |
+|----|------|:---:|---------|
+| conventions | lesson `strikes≥2` | ✅ **A·已建一半** | 掃 `.governance/lessons/*` frontmatter → nudge 畢業(= 學習迴圈計數,免費)|
+| GLOSSARY | docs 用到的術語不在表內 | ✅ A(噪音需 triage)| diff「changed docs 的 backtick 術語」−「GLOSSARY 已有」→ 列候選 |
+| module specs | 改 production code 無 owning SPEC | 🟡 B 中等 | 改 code 的模組無對應 SPEC → nudge(= cora SDD 紀律雛形)|
+| SYSTEM.md | 「重大結構決策」 | 🔴 **C·無法全自動** | 判斷題;只能抓 proxy:新增 `modules/X.md` 但 SYSTEM 沒動 → 提醒「要不要補一節」 |
+
+> ⚠️ **不過度承諾**(Rule #12):SYSTEM 是 C 類**判斷題、無法可靠自動偵測**,只給 proxy 提醒,別假裝能。GLOSSARY/conventions 才是 A 類可確定性偵測。
+> ⚠️ **死殼陷阱**(§5.5 鐵則):cora `check-terminology.sh` 正是「偵測術語」做成**死殼**的反例。會動版本 = **只列候選、不強制**(report-only)+ **必附測試**(否則別生)。
+
+**形狀**:**不是新第四迴圈** —— 主要是把既有三迴圈的訊號接到知識層 + 加兩支小偵測器(glossary-candidate / spec-coverage)。與 §4.1 同形:確定性偵測(report-only)→ AI/PM 草擬 → PM 拍板填。**loops/(只報告)非 gates/(會擋)**:不能逼人寫 glossary。
+
+**`/onboard` 引導流程**:① 確認技術棧 → ② 帶 PM 起第一版 PRD(接 brainstorming)→ ③〔選用·可跳,**建議留**〕day-1 跑一次極小真派工,讓 PM 親眼看「派工→驗證→commit」整條 harness 會動 → ④ 講清楚「`.context` 是空的、會這樣長」+ 附上面成長表。
+
+**種子實作**(待 PM 拍板派工):`loops/context-growth/` 最小 Phase-1 偵測器(glossary-candidate + lesson-graduation + spec-coverage,自帶測試、report-only)+ `.context/` 空骨架模板(各檔頂端帶「我會這樣長」註記,修掉 v1 早問 bug)+ `/onboard` 流程文件。
+
+**業界佐證(≥3 對標,portfolio;對應 Rule #7)**
+
+| 對標 | 在做什麼(白話) | 對應本節 |
+|------|----------------|---------|
+| **Walking skeleton**(Cockburn / GOOS)| 先讓一條極薄端到端跑起來,其餘長出來 | 薄冷啟動 |
+| **arc42 / evolutionary architecture docs** | 架構文件隨專案演進,非前期一次寫完 | SYSTEM/.context 成長 |
+| **Living Documentation**(Cyrille Martraire)| 文件由工作觸發 / 衍生,不是憑空寫 | 偵測「何時該填」 |
+| **ESLint warn-level / coverage report** | 報告不阻斷;覆蓋率報「哪裡沒測」 | report-only loop / spec-coverage 偵測 |
+
+> 佐證結論:業界主流是「薄起步 + 文件隨工作長 + 偵測缺口用 report-only」—— 與本節完全一致。連結待 finalize 時補查(arc42.org / diataxis.fr / Living Documentation 書)。
+
 ## 5. 硬關卡(共 2 個)— ✅ 鎖定
 
 > 整個包只有「2 個自動攔截」,其餘全是「建議」。攔截=做錯直接擋住,AI 講不過去。
@@ -318,7 +377,7 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 - [x] 重心校正 forward-first + 新增 §1.5 種子骨架(← PM 2026-06-27)
 - [x] 全治理盤點 → 28 盲區報告 `docs/gap-audit.md`
 - [x] 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `docs/inventory-deep.md`;套入 6 條修正(2026-06-28)
-- [ ] **種子缺陷 4 修**(~~學習迴圈補降級~~ ✅ §4.1 + `loops/anti-bloat/` / 冷啟動流程 / ~~捕捉引擎真的會動~~ ✅ §4.2 + `loops/learning-capture/` / 跨專案版本治理)→ **剩 #2 冷啟動 + #4 跨專案版本治理**
+- [ ] **種子缺陷 4 修**(~~學習迴圈補降級~~ ✅ §4.1 + `loops/anti-bloat/` / ~~冷啟動流程~~ ✅ 設計 §4.3(prototype `loops/context-growth/` 待派工)/ ~~捕捉引擎真的會動~~ ✅ §4.2 + `loops/learning-capture/` / 跨專案版本治理)→ **剩 #4 跨專案版本治理(+ #2 prototype 待派工)**
 - [ ] 把種子骨架(§1.5 🌱 那串)寫成實體檔案 + agent 骨架模板(空白員工合約)
 - [ ] 洞 2:核心把「SDD+TDD 紀律」與「openspec 工具」分兩層寫(§2.5.6)
 - [ ] 「該長出來」清單(§1.5 🌳)做成進階模組 / known-divergence,**非主線**
