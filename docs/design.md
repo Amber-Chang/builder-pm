@@ -1,6 +1,6 @@
 # PM-AI 開發治理包 · 設計底稿(方案 B)
 
-> 狀態:🚧 進行中 checkpoint ｜ 更新:2026-06-28 ｜ 正本在 builder-pm repo,本機 cora-governance-notes 為同步副本
+> 狀態:🚧 進行中 checkpoint ｜ 更新:2026-06-28 ｜ 正本在 builder-pm repo(唯一正本;原 cora-governance-notes 副本 2026-06-28 起停止同步 — 同一事實兩處會 drift,見 §5.5)
 > 由 brainstorming 對話累積;本檔只記「已拍板」與「待辦」,不重述討論過程。
 > 2026-06-27 新增 §2.5 Harness 角色分層(基於 PM 手繪心智圖 + 全 `.claude/` 掃描)。
 > 2026-06-27 重心校正:forward 種新專案為主線(非回套 cora);新增 §1.5 種子骨架;盲區報告 `docs/gap-audit.md`。
@@ -10,6 +10,7 @@
 > 2026-06-28 新增 §4.2 學習捕捉引擎 + `loops/learning-capture/` 範本(grounding:Hermes `background_review` 自動捕捉);**自我修正**舊筆記「Hermes 沒自動 nudge=行銷話術」之誤(Rule #12)。§1 北極星 PM 角色校準=治理包非 runtime。三迴圈設計全鎖定。
 > 2026-06-28 新增 §4.3 冷啟動 onboarding + 知識層成長偵測(種子缺陷 #2);grounding v1 `setup.sh` + cora `.context/` 真實成長史 + 三迴圈當成長引擎。修 v1「day-0 叫 PM 填 SYSTEM」早問 bug。偵測「何時該填」**誠實分級**:GLOSSARY/conventions 可確定性偵測、SYSTEM 是判斷題只能 proxy(Rule #12 不過度承諾 + §5.5 死殼鐵則)。prototype `loops/context-growth/`(commit f8376f0,codex 審無 BLOCK)。
 > 2026-06-28 新增 §1.6 更新模型(PM 拍板「刻意不做跨專案推送」);種子缺陷 #4 結論=決定不建自動 propagation(scaffold 非 live dependency,grown 內容永不覆蓋)。**四個種子缺陷至此全結案。**
+> 2026-06-28 新增 §1.7 安裝架構(薄核心 + opt-in 模組走 plugin 介面)+ §2.5.7 skill 路由層;PM 逐步拍板:4 角色全套 / `SKILLS.md` 單一正本 + 3 通用 skill 預接 / openspec+Codex 審查走 opt-in 且設計成「裝 plugin」介面(非搬檔)/ review-agent 抽獨立 plugin = seed 後下一里程碑 / openspec 歸 Generator 做 SDD(修對話誤標,對回 §2.5.4)。
 
 ---
 
@@ -85,6 +86,39 @@
 | **npm / library 模型** | 更新能流動**只因**你不改 `node_modules`;一旦 fork 改它更新就回不去 —— 印證「不手改的才可更新」分界 |
 
 **結論**:四個種子缺陷(#1 防膨脹 / #2 冷啟動 / #3 捕捉引擎 / #4 跨專案版本治理)**至此全結案**(#1#2#3 = 建機制;#4 = 決定不建、記錄理由)。
+
+## 1.7 安裝架構:薄核心 + opt-in 模組(走 plugin 介面)— ✅ 鎖定(2026-06-28,PM 逐步拍板)
+
+> 里程碑:把 builder-pm 從「設計稿 + 散裝範本」變成**真能一鍵安裝的包**(`setup.sh` 問答 → 填 `{{placeholder}}` → 砍用不到 → `git init`)。amber-stack(v1)的 `setup.sh` 為問答骨架;v2 把「會裝進新專案的東西」圈進 `template/`,界線比 v1 乾淨(v1 設計稿與種子混在 repo 根、靠 setup.sh 手動砍)。
+
+**PM 戳到的接縫 ①scaffold vs ②tool**:builder-pm 混了兩種「散佈方式天生不同」的內容 ——
+
+| 類型 | 例子 | 天生散佈方式 |
+|------|------|------------|
+| **① 鷹架**(複製一次、專案自己擁有、會改)| 核心憲章 · 4 角色合約 · `.context` 模板 · loops/gates 紀律 | 留在 seed / `setup.sh`(copy-once)|
+| **② 工具**(要版本控管、會更新、多專案共用)| `review-agent` · openspec · skill 包 | **變 plugin**(install + 版本 + 更新)|
+
+**薄核心(always-on,每個新專案都有)**:`CLAUDE.md`(§2 憲章)· `.claude/agents/{coordinator,planner,generator,evaluator}.md`(空白員工合約)· `SKILLS.md` + 3 通用 skill(§2.5.7)· `.context/` 四空模板 · `loops/`+`gates/` · `ONBOARDING.md` · `setup.sh`。
+
+**opt-in 模組(`setup.sh` 問「要不要裝」)**:
+- **openspec** → Generator 的 SDD 流程(§2.5.7);選了才跑 `openspec init` 生最新 skill,標明需先裝 CLI。
+- **Codex 雙模型審查** → `review-agent` + `pr-review-agent` skill 接成 Evaluator 第二模型;沒裝時 Evaluator 用單模型獨立審(鐵律「寫的≠驗的」仍在)。
+
+**關鍵設計:opt-in 模組設成「裝 plugin」介面,不把 ② 類工具搬進 `template/`**。理由:② 是重型 + 會更新,vendor 進種子 = 過期 + 養肥(撞 §1.5 anti-bloat)。
+- `review-agent` 已驗證**自給自足**(只用 Node 內建 + 內部 require、52K、無外部套件無硬編 key)→ 天生 plugin 形狀 → **抽成獨立 repo + plugin = seed 之後的下一個里程碑**。
+- **Codex 做得成 plugin**(查證:superpowers plugin 同時帶 `.claude-plugin/` + `.codex-plugin/` + `hooks-codex.json` 多介面 adapter)→ 不必每專案手抄 `.codex/skills`。
+- 過渡期(plugin 未生)`setup.sh` 的模組選項暫指向 cora 既有並標明;介面 forward-compatible,plugin 落地後把「copy 檔」換成「install plugin」即可,核心不動。
+
+**這是 §1.6 的成熟版,不是推翻**:§1.6 說「引擎可手動重拉新版」—— plugin 就是「手動重拉」的**正式機制**(版本化、像 npm/VS Code 外掛)。§1.6 的 scaffold≠live-dependency 仍成立:① 鷹架 copy-once 不回流;② 工具走 plugin 才有受控更新流。
+
+**業界佐證(≥3,portfolio;對應 Rule #7)**:
+
+| 對標 | 證據 |
+|------|------|
+| **cookiecutter / rails new** | 鷹架 copy-once、你自己擁有 → 對應 ① 留 seed |
+| **npm / VS Code Marketplace** | 工具版本化、可更新、多專案共用 → 對應 ② 走 plugin |
+| **VS Code `.vscode/extensions.json`** | 只**推薦**外掛、不把外掛塞進 repo;裝不裝 / 哪版留給專案 → 對應 SKILLS.md「推薦不綁死」(§2.5.7)|
+| **superpowers plugin** | 一個 repo 帶多介面 adapter → 實證「Codex 工具做得成 plugin」|
 
 ## 2. 核心憲章(一頁 / 10 條 / 4 桶)— ✅ 鎖定
 
@@ -164,8 +198,27 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 
 ### 2.5.6 待補的洞(對應 PM 圖)
 
-- **洞 2:工具 vs 紀律要分層** —— PM 圖把 Generator 寫成「轉成 openspec 的 SDD+TDD」,但 openspec 綁特定 CLI(掃描歸 cora 專屬)。通用包要把「**SDD+TDD 是紀律**」與「**openspec 是 cora 選的工具**」分兩層,別專案抽換工具不影響紀律。cora 自己照用 openspec 沒問題。
-- **洞 3:自家 SPEC 系統 vs OpenSpec「二選一」** —— cora 同時有自家 `docs/04-specs/SPEC-*` 與一整套 OpenSpec(CLI + `openspec/` 目錄 + propose/apply/archive/explore 四件套 skill),兩套平行且**命令撞名**(`explore` vs `opsx:explore`、`cora-start` vs `opsx:propose`)。種子**預設只帶一套** spec/propose/explore 流程;OpenSpec 整套標為 **cora 選用工具(grow)**,新專案明確要才開,否則兩套打架、PM 困惑。
+- **洞 2:工具 vs 紀律要分層** —— PM 圖把 Generator 寫成「轉成 openspec 的 SDD+TDD」,但 openspec 綁特定 CLI(掃描歸 cora 專屬)。通用包要把「**SDD+TDD 是紀律**」與「**openspec 是 cora 選的工具**」分兩層,別專案抽換工具不影響紀律。cora 自己照用 openspec 沒問題。 → ✅ 2026-06-28 落地 §2.5.7:openspec 歸 Generator SDD、走 opt-in(§1.7);紀律與工具正式分兩層。
+- **洞 3:自家 SPEC 系統 vs OpenSpec「二選一」** —— cora 同時有自家 `docs/04-specs/SPEC-*` 與一整套 OpenSpec(CLI + `openspec/` 目錄 + propose/apply/archive/explore 四件套 skill),兩套平行且**命令撞名**(`explore` vs `opsx:explore`、`cora-start` vs `opsx:propose`)。種子**預設只帶一套** spec/propose/explore 流程;OpenSpec 整套標為 **cora 選用工具(grow)**,新專案明確要才開,否則兩套打架、PM 困惑。 → 2026-06-28 修正:openspec 改走 **first-class opt-in**(`setup.sh` 問、選了才裝、當 Generator 唯一 spec 流程故不撞名),非單純「預設不帶」;見 §1.7。
+
+### 2.5.7 skill 路由層:角色 ↔ skill(SKILLS.md 單一正本)— ✅ 鎖定(2026-06-28)
+
+> 來源:PM 拿 personal-site 的 `SKILLS.md` 當參考(按場景挑 skill、最小必要、不為有而硬用)。關鍵洞:**四角色 = 工作四階段,「場景」自然折進「角色」**,不必搞「場景 × 角色」二維(YAGNI)。
+
+**機制**:種子 ship 一份 **`SKILLS.md`(角色標記版索引)= skill 清單單一正本**(§5.5 DRY:同一事實只寫一處);每個角色合約放一小段「我會用的 skill」指回它 + 留 `{{空白}}` 給專案加場景專用的。
+
+**3 個通用 skill 預接(輕薄版,不 vendor 重型外部包)**:
+
+| 角色 | 預接 skill | 性質 |
+|------|-----------|------|
+| Planner | `brainstorming` | 通用·常駐 |
+| **Generator** | `test-driven-development` + **`openspec`(SDD)** | TDD 常駐;openspec 走 opt-in(§1.7)|
+| Evaluator | `requesting-code-review` | 通用·常駐 |
+| Coordinator | —(分流大腦,不需要)| — |
+
+**openspec 歸 Generator 不歸 Planner**(對回 §2.5.4 + §2.5.6 洞 2):SDD(先有 spec 再實作)是 Generator 的**紀律**;Planner 做更前面的模糊收斂(brainstorming → PRD)。沒裝 openspec 時 Generator 照樣做 SDD —— 用「先讀 spec、對齊、再實作」紀律版,不靠特定工具。
+
+**紀律隨種子帶走**:SKILLS.md 內含 personal-site 那句「只在真有幫助時用、不為有 skill 而硬用、最小必要組合」—— 與 anti-bloat(§4.1)同一靈魂。
 
 ## 3. 模組清單(選用,按專案形狀開)— ✅ 鎖定(細節可微調)
 
@@ -405,8 +458,10 @@ Day-N(邊做邊長)
 - [x] 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `docs/inventory-deep.md`;套入 6 條修正(2026-06-28)
 - [x] **種子缺陷 4 修全結案**(2026-06-28):~~#1 學習迴圈補降級~~ ✅ §4.1 `loops/anti-bloat/` / ~~#2 冷啟動~~ ✅ §4.3 + `loops/context-growth/`(f8376f0,codex 審無 BLOCK)/ ~~#3 捕捉引擎~~ ✅ §4.2 `loops/learning-capture/` / ~~#4 跨專案版本治理~~ ✅ §1.6 **決定刻意不做**(scaffold 非 live dependency,記錄理由)
 - [x] 冷啟動 `.md` 收尾(2026-06-28):`onboarding/context-templates/`(SYSTEM/GLOSSARY/CONVENTIONS/modules 四份空骨架)+ `onboarding/ONBOARDING.md` 開工流程文件 → **§4.3 種子實作全到位**
-- [ ] 把種子骨架(§1.5 🌱 那串)寫成實體檔案 + agent 骨架模板(空白員工合約)
-- [ ] 洞 2:核心把「SDD+TDD 紀律」與「openspec 工具」分兩層寫(§2.5.6)
+- [~] 把種子骨架寫成實體檔 + 4 角色空白員工合約 + `setup.sh` 安裝器(§1.7 架構鎖定;薄核心 `.md` 批 main 直編、`setup.sh` 派 sub-agent)— **進行中** 2026-06-28
+- [x] 洞 2:「SDD+TDD 紀律」與「openspec 工具」分兩層 → §2.5.7(openspec 歸 Generator SDD、opt-in)(2026-06-28)
+- [ ] **review-agent 抽成獨立 repo + plugin**(② 工具類;seed 之後的下一個里程碑;Codex 支援 plugin 已查證 §1.7)
+- [ ] (收尾)cora-governance-notes 舊設計副本換成指回 builder-pm 正本 / 或刪(停同步後避免讀到舊版)
 - [ ] 「該長出來」清單(§1.5 🌳)做成進階模組 / known-divergence,**非主線**
 - [x] Drift 守門原則定案 → §5.5(三類 × 解法階層 + checker 必附測試鐵則)(2026-06-28)
 - [ ] drift-fact-check 最小 prototype(`gates/drift-fact-check/`,自帶測試)→「對的自動化長怎樣」範本
