@@ -7,18 +7,20 @@
 > 2026-06-28 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `docs/inventory-deep.md`;本檔套入 6 條修正(模組⑥跨樹依賴 / OpenSpec 雙軌 / 雙語+去硬編+未啟用≠死碼 / error-patterns 修正 / fail-closed 閘+機密衛生 / 派工貼引文+model 分層)。
 > 2026-06-28 新增 §5.5 Drift 守門 + `gates/drift-fact-check` 範本;翻 cora 出生史確認 **amber-stack = builder-pm v1**,v2 定位 = v1 種子 + 三個自我維持迴圈(防膨脹/學習/drift),見 §1。
 > 2026-06-28 新增 §4.1 防膨脹(規則降級)迴圈 + `loops/anti-bloat/` 範本(grounding:Hermes `Curator` OSS + cora 自身鐘擺 telemetry;雙背書)。
+> 2026-06-28 新增 §4.2 學習捕捉引擎 + `loops/learning-capture/` 範本(grounding:Hermes `background_review` 自動捕捉);**自我修正**舊筆記「Hermes 沒自動 nudge=行銷話術」之誤(Rule #12)。§1 北極星 PM 角色校準=治理包非 runtime。三迴圈設計全鎖定。
 
 ---
 
 ## 1. 目標與已定參數
 
-- **北極星**(2026-06-27 校正):抽出 cora「邊開發邊堆疊」長出來的治理裡**最重要的穩定骨架**,讓**未來新專案一成案(day1)就有可依賴的工作流可跑**(PM 不寫 code 也驅動得動)。重點是 **forward 種新專案,不是 backport 回 cora**。
+- **北極星**(2026-06-27 校正;2026-06-28 PM 再校準角色):抽出 cora「邊開發邊堆疊」長出來的治理裡**最重要的穩定骨架**,讓**未來新專案一成案(day1)就有可依賴的工作流可跑**。重點是 **forward 種新專案,不是 backport 回 cora**。
+  - **PM 角色(2026-06-28 PM 親口校準,取代舊說「PM 不寫 code 也驅動得動」)**:harness 的目的是讓 **PM 在需求明確時,靠 AI 輔助 + 各種 harness 機制,開發出「幾乎可上線的產品原型」**;部署 / 壓測 / 更深的技術細節仍交資深工程師。→ 直接定調 builder-pm 是**治理包(riding Claude Code 的 hook)非自建 runtime**:目標是把需求變成可上線原型,不是去維護一個 agent 執行環境(那偏離北極星,連 portfolio 論述都歪)。
 - **核心比喻**:包 = **種子 + 長樹機制**,不是 cora 長成的整棵樹。cora 後期的複雜度(多模型 / 契約 gate / 跨模型 reviewer)讓每個新專案靠「學習機制」隨需長出來,不是 day1 全內建。
 - **血統與 v2 定位**(2026-06-28,翻 cora 出生史得出):builder-pm **不是從零發明**。cora 是 2026-03 從模板 **`amber-stack`**(`tvbs-amberchang`,private)scaffold 出來的,而 amber-stack 自述就是「AI collaboration framework for PM-driven product development with Claude Code」—— builder-pm 的**同一使命**。所以 **amber-stack = v1**(已驗證好用:結構 / 12-agent 團隊 / 4 條設計原則含 Single Source of Truth / `setup.sh` 冷啟動問答 / `{{placeholder}}` 填空)。
   - **但 v1 只有「種子」、沒有「長樹機制」** → 種下去就沒人管 → 三個症狀:**會膨脹 / 不會自我精進 / 抓不到文字+code drift**(amber-stack 明寫了「每條規則只存一處」,cora 還是 drift 成 README 12 條 vs CLAUDE 13 條 → 證明**寫下原則 ≠ 守得住**)。
   - **builder-pm = v2 = amber-stack 種子 + 三個自我維持迴圈**(這就是 §7「種子缺陷 4 修」存在的理由):
     - **防膨脹迴圈** —— 規則零遵循自動鬆綁/退役(不只會加)→ §4.1 + §1.5 種子缺陷 #1 · 🚧 設計鎖定 + 種子 prototype(`loops/anti-bloat/`)
-    - **學習迴圈** —— 踩雷自動捕捉 → 累積 → 畢業成規則 → §4 種子缺陷 #3 · 🟡 設計了、捕捉引擎未真動
+    - **學習迴圈** —— 踩雷自動捕捉 → 累積 → 畢業成規則 → §4.2 種子缺陷 #3 · 🚧 設計鎖定 + 種子 prototype(`loops/learning-capture/`,grounded Hermes `background_review`)
     - **drift 守門迴圈** —— 文字/契約不一致會擋 → §5.5 · ✅ 已建可跑 prototype
   - 一句話:**v1 給你會枯的漂亮盆栽;v2 加上會自己澆水/修枝/不亂長的機制。**
 - **範圍**(已定):先萃取**通用種子骨架**;**「套回 cora」降為選用後路**(非主線)。
@@ -52,7 +54,7 @@
 **🔧 種子本身要補的缺陷(來自 gap-audit,做實體檔時處理):**
 - 學習迴圈對稱化(升級 + **降級** / 規則 fitness review)→ ✅ 設計鎖定 §4.1 + 🚧 prototype `loops/anti-bloat/`(照 Hermes Curator DNA + override 訊號)
 - 冷啟動流程(目前只有空模板,缺「怎麼起步」的流程)
-- 捕捉引擎要真的會動 —— **§4「半自動 hook 捕捉」cora 其實沒有**,屬淨新建待實作(見 §4 校正)
+- 捕捉引擎要真的會動 —— **§4「半自動 hook 捕捉」cora 其實沒有** → ✅ 設計鎖定 §4.2 + 🚧 prototype `loops/learning-capture/`(grounded Hermes `background_review`,觸發走 Claude Code hook 非自建 runtime)
 - 跨專案版本治理(可重用包必備:核心/模組更新怎麼傳到 N 個已裝專案)
 
 > 完整 28 盲區 + triage 見 `docs/gap-audit.md`。
@@ -155,7 +157,7 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 
 ## 4. 記憶 / 學習模組 — ✅ 鎖定(本次重點,最完整)
 
-> ⚠️ 2026-06-27 校正(gap-audit):(1) 本節「半自動捕捉」的 hook 在 cora **不存在**(無 Stop/SessionEnd hook、捕捉 100% 手寫且停更 45 天)→ 屬**淨新建待實作**,非從 cora 萃取;(2) 畢業只有「升級」是單向缺陷,需補對稱**降級**(零遵循/高 override 的規則自動列鬆綁候選),見 §1.5。
+> ⚠️ 2026-06-27 校正(gap-audit):(1) 本節「半自動捕捉」的 hook 在 cora **不存在**(無 Stop/SessionEnd hook、捕捉 100% 手寫且停更 45 天)→ cora 端是**淨新建**(非從 cora 萃取),但**有 Hermes `background_review` 完整對標可借**(2026-06-28 重查修正,非憑空發明,見 §4.2);(2) 畢業只有「升級」是單向缺陷,需補對稱**降級**(零遵循/高 override 的規則自動列鬆綁候選),見 §1.5。
 >
 > ⚠️ 2026-06-28 補(deep-inventory):(3) **「純建議=零執法」已有 cora 鐵證**(從風險臆測升為已驗證依據):main agent 連續 5 次違反 PM「不要寫 memory」指示 → `ai-status-index` 違規表結論「靠自律已證明反覆失守」→ cora 建 `block-memory-write` PreToolUse hook 物理攔截。即 **DISCIPLINE 在 LLM 上會系統性失守,必要時得用 hook 兜底**。(4) `error-patterns.json` **不是死碼**(修正 gap-audit 駁回):cora `knowledge.cjs` 有完整 load/search/add、`review-packet.cjs` 已把它組進 live packet → **讀路徑已接、寫路徑未啟用、零資料**;種子刻意不鏡像的理由改成「不重建 cora 的自我累積 bug 知識庫(屬 grow,有第二模型 reviewer 才需要)」,非「死碼所以不管」。
 
@@ -209,9 +211,40 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 
 **種子實作**:`loops/anti-bloat/` 提供最小、自帶測試的 **Phase 1**(確定性偵測 + protected 清單 + 寬限窗 + dry-run 報告)當範本(示範「對的防膨脹自動化長怎樣」);Phase 2 判斷留給 AI/PM,不寫死。與 §5.5 drift 範本並列,但 `gates/`(會擋)vs `loops/`(只報告)刻意分家。
 
+### 4.2 學習捕捉引擎:讓捕捉「真的會動」— ✅ 設計鎖定(2026-06-28)
+
+> grounding:Hermes `agent/background_review.py`(每回合 fork 便宜 aux 模型回顧該回合)+ nudge config。**這是三迴圈最後一個**(種子缺陷 #3)。cora §4 設想的「半自動捕捉」是對的方向,但 cora 自己沒做(捕捉 100% 手寫、停更 45 天);Hermes 證明它是**可上線的真機制**,我們搬它的形狀。
+
+**結構性限制 + 解法(2026-06-28 PM 釐清身份方向)**:builder-pm 是**治理包、不掌控對話迴圈**(乘客非車),不能像 Hermes 每 N 回合 fork 自己。但 **Claude Code 把觸發點開放成 hook**,Hermes 三觸發全做得出來 → **不需變 runtime**(變 runtime 會砍掉零基建/PM day1 能用/可攜三命根,見 §1 北極星校準):
+
+| Hermes 用迴圈做的 | builder-pm 用 hook 做 | config 對標 |
+|------|------|------|
+| context 消失前 flush(最重要,最後一次補捉)| **SessionEnd / PreCompact hook** | `flush_min_turns:6` |
+| 每 N 回合 nudge「考慮存」 | **Stop hook + 自存計數器** | `nudge_interval:10` |
+| 複雜任務後存 skill | Stop hook + 條件 | `creation_nudge_interval:15` |
+| 當場 AI 紀律(PM 一糾正就草擬)+ `/lesson` 顯式後門 | charter 紀律 + slash 指令 | — |
+
+**捕捉品質閘(Hermes review prompt 純 prompt,可整段搬,最有價值的可攜部分):**
+- **該記的訊號(任一觸發即行動)**:PM 糾正你的風格/語氣/格式/冗長(「太囉嗦」「直接給答案」「別這樣排版」=第一級訊號)、PM 糾正你的流程/步驟順序、冒出非顯而易見的技巧/修法/debug 路徑、載入的 skill 被證明錯/缺步驟 → 當下 patch。
+- **🔑 絕不記的反模式(cora §4 只有薄版,這是 Hermes 硬教訓)**:
+  1. **環境依賴的失敗**(缺 binary / 沒裝套件 / 沒設憑證 / command not found)—— PM 自己能修,不是耐久規則。
+  2. **對工具的負面斷言**(「X 壞了」「browser 不能用」)—— 會「**硬化成 agent 之後幾個月拿來拒絕自己的藉口**」,即使原問題早修好。要記就記**修法**(裝什麼/設什麼),不記「這工具不能用」。
+  3. **已解的暫時錯**(retry 成功 → 教訓是 retry pattern,不是那個錯)。
+  4. **一次性敘事**(「總結今天行情」不是一類工作,不值得成規則/skill)。
+- **偏向記**:「Nothing to save 不該是預設;什麼都沒記 = 錯過學習,不是中性結果。」
+- **擺放紀律(= 捕捉時就防膨脹,與 §4.1 同系統)**:先 patch 既有 skill/規則 > 才開新的;新名**必須 class-level**,**禁** PR 號 / error 字串 / 「fix-X / 今天這題」當名 ——「只對今天有意義的名字就是錯的」。
+- **Memory vs Lesson 分流**:Memory 記「使用者是誰 + 當前狀態」;Lesson/Skill 記「這類任務怎麼做」。PM 的風格/流程偏好 → 進治理規則本文,不只進 memory。
+
+**種子實作**:`loops/learning-capture/` —
+- **品質閘 linter(可測核心,runtime 無關)**:給一則草擬教訓,確定性檢查 §4 HARDLINE 必填欄位 + 擋上面 4 種反模式 + 擋 session-artifact 命名 → PASS/REJECT。**這是讓捕捉能長久的關鍵**(沒品質閘 → cora 那種手寫停更 + 爛條堆積)。
+- **觸發 hook(讓它真的會動)**:最小 SessionEnd nudge hook —— context 消失前印出品質閘 checklist + 草擬模板,逼 AI 在 session 結束前補捉。
+- **草擬 prompt**:載入式 capture 指令,內嵌上面整段品質閘(Hermes review prompt 繁中化)。
+
 **不做**:RAG、SQLite/向量庫(過度工程;規模不到。要 filter 用 frontmatter,要 session 搜尋未來用 FTS5 關鍵字,與 LESSONS 分離)。
 
-**參考來源**:Hermes-agent 真實程式碼 —— `agent/memory_manager.py`(turn 前 prefetch / turn 後 sync 的生命週期)+ `agent/learn_prompt.py`(`/learn` 顯式蒸餾 + HARDLINE 品質標準)。README 的「periodic nudge」查證為行銷話術,程式碼無此機制。
+**參考來源**:Hermes-agent 真實程式碼 —— `agent/memory_manager.py`(turn 前 prefetch / turn 後 sync 的生命週期)+ 捕捉引擎 `agent/background_review.py`(每回合 fork 便宜 aux 模型回顧該回合、決定要不要寫)+ HARDLINE 品質閘在 review prompt 內。
+
+> ⚠️ **2026-06-28 自我修正(Rule #12,對真 code 重查)**:本節舊筆記曾寫「Hermes 的 periodic nudge 是行銷話術、程式碼無此機制、捕捉 100% 靠顯式 /learn」—— **這是錯的**。`agent/background_review.py` + config(`memory.nudge_interval:10` 每 10 回合提醒存記憶、`memory.flush_min_turns:6` context 消失前 flush、`skills.creation_nudge_interval:15` 複雜任務後存 skill)證明 Hermes **有完整、可設定、自動週期的捕捉引擎**。詳見 §4.2。
 
 ## 5. 硬關卡(共 2 個)— ✅ 鎖定
 
@@ -285,7 +318,7 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 - [x] 重心校正 forward-first + 新增 §1.5 種子骨架(← PM 2026-06-27)
 - [x] 全治理盤點 → 28 盲區報告 `docs/gap-audit.md`
 - [x] 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `docs/inventory-deep.md`;套入 6 條修正(2026-06-28)
-- [ ] **種子缺陷 4 修**(~~學習迴圈補降級~~ ✅ 設計鎖定 §4.1 + prototype `loops/anti-bloat/` / 冷啟動流程 / 捕捉引擎真的會動 / 跨專案版本治理)
+- [ ] **種子缺陷 4 修**(~~學習迴圈補降級~~ ✅ §4.1 + `loops/anti-bloat/` / 冷啟動流程 / ~~捕捉引擎真的會動~~ ✅ §4.2 + `loops/learning-capture/` / 跨專案版本治理)→ **剩 #2 冷啟動 + #4 跨專案版本治理**
 - [ ] 把種子骨架(§1.5 🌱 那串)寫成實體檔案 + agent 骨架模板(空白員工合約)
 - [ ] 洞 2:核心把「SDD+TDD 紀律」與「openspec 工具」分兩層寫(§2.5.6)
 - [ ] 「該長出來」清單(§1.5 🌳)做成進階模組 / known-divergence,**非主線**
