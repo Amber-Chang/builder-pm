@@ -5,6 +5,7 @@
 > 2026-06-27 新增 §2.5 Harness 角色分層(基於 PM 手繪心智圖 + 全 `.claude/` 掃描)。
 > 2026-06-27 重心校正:forward 種新專案為主線(非回套 cora);新增 §1.5 種子骨架;盲區報告 `docs/gap-audit.md`。
 > 2026-06-28 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `docs/inventory-deep.md`;本檔套入 6 條修正(模組⑥跨樹依賴 / OpenSpec 雙軌 / 雙語+去硬編+未啟用≠死碼 / error-patterns 修正 / fail-closed 閘+機密衛生 / 派工貼引文+model 分層)。
+> 2026-06-28 新增 §5.5 Drift 守門 + `gates/drift-fact-check` 範本;翻 cora 出生史確認 **amber-stack = builder-pm v1**,v2 定位 = v1 種子 + 三個自我維持迴圈(防膨脹/學習/drift),見 §1。
 
 ---
 
@@ -12,6 +13,13 @@
 
 - **北極星**(2026-06-27 校正):抽出 cora「邊開發邊堆疊」長出來的治理裡**最重要的穩定骨架**,讓**未來新專案一成案(day1)就有可依賴的工作流可跑**(PM 不寫 code 也驅動得動)。重點是 **forward 種新專案,不是 backport 回 cora**。
 - **核心比喻**:包 = **種子 + 長樹機制**,不是 cora 長成的整棵樹。cora 後期的複雜度(多模型 / 契約 gate / 跨模型 reviewer)讓每個新專案靠「學習機制」隨需長出來,不是 day1 全內建。
+- **血統與 v2 定位**(2026-06-28,翻 cora 出生史得出):builder-pm **不是從零發明**。cora 是 2026-03 從模板 **`amber-stack`**(`tvbs-amberchang`,private)scaffold 出來的,而 amber-stack 自述就是「AI collaboration framework for PM-driven product development with Claude Code」—— builder-pm 的**同一使命**。所以 **amber-stack = v1**(已驗證好用:結構 / 12-agent 團隊 / 4 條設計原則含 Single Source of Truth / `setup.sh` 冷啟動問答 / `{{placeholder}}` 填空)。
+  - **但 v1 只有「種子」、沒有「長樹機制」** → 種下去就沒人管 → 三個症狀:**會膨脹 / 不會自我精進 / 抓不到文字+code drift**(amber-stack 明寫了「每條規則只存一處」,cora 還是 drift 成 README 12 條 vs CLAUDE 13 條 → 證明**寫下原則 ≠ 守得住**)。
+  - **builder-pm = v2 = amber-stack 種子 + 三個自我維持迴圈**(這就是 §7「種子缺陷 4 修」存在的理由):
+    - **防膨脹迴圈** —— 規則零遵循自動鬆綁/退役(不只會加)→ §4 + §1.5 種子缺陷 #1 · ⬜ 未建
+    - **學習迴圈** —— 踩雷自動捕捉 → 累積 → 畢業成規則 → §4 種子缺陷 #3 · 🟡 設計了、捕捉引擎未真動
+    - **drift 守門迴圈** —— 文字/契約不一致會擋 → §5.5 · ✅ 已建可跑 prototype
+  - 一句話:**v1 給你會枯的漂亮盆栽;v2 加上會自己澆水/修枝/不亂長的機制。**
 - **範圍**(已定):先萃取**通用種子骨架**;**「套回 cora」降為選用後路**(非主線)。
 - **深度**(已定):**文件為主 + 極少硬關卡**(核心永遠 2 個;模組可各帶專屬硬關卡 — 見 gap-audit B2)。
 - **方案**(已定):**B = 一頁核心 + 選用模組**,複雜度由「開幾個模組」決定。
