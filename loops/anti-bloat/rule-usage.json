@@ -1,0 +1,11 @@
+{
+  "_note": "預設示範用 telemetry sidecar。⚠️ 實際專案中此檔屬本機 telemetry，應 gitignore 不進 repo（見 README）。這份是範例樣本，僅供開箱即看報告長相。",
+  "asof": "2026-06-28",
+  "rules": {
+    "core-01-no-guessing": { "trigger_count": 30, "override_count": 30, "last_triggered_at": "2026-06-27" },
+    "grown-done-definition-5seg": { "trigger_count": 8, "override_count": 8, "last_triggered_at": "2026-06-20" },
+    "grown-tdd-backend": { "trigger_count": 12, "override_count": 1, "last_triggered_at": "2026-06-25" },
+    "grown-pr-merge-harness": { "trigger_count": 9, "override_count": 0, "last_triggered_at": "2026-03-01" },
+    "grown-codex-review-loop": { "trigger_count": 2, "override_count": 2, "last_triggered_at": "2026-06-26" }
+  }
+}

@@ -6,6 +6,7 @@
 > 2026-06-27 重心校正:forward 種新專案為主線(非回套 cora);新增 §1.5 種子骨架;盲區報告 `docs/gap-audit.md`。
 > 2026-06-28 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `docs/inventory-deep.md`;本檔套入 6 條修正(模組⑥跨樹依賴 / OpenSpec 雙軌 / 雙語+去硬編+未啟用≠死碼 / error-patterns 修正 / fail-closed 閘+機密衛生 / 派工貼引文+model 分層)。
 > 2026-06-28 新增 §5.5 Drift 守門 + `gates/drift-fact-check` 範本;翻 cora 出生史確認 **amber-stack = builder-pm v1**,v2 定位 = v1 種子 + 三個自我維持迴圈(防膨脹/學習/drift),見 §1。
+> 2026-06-28 新增 §4.1 防膨脹(規則降級)迴圈 + `loops/anti-bloat/` 範本(grounding:Hermes `Curator` OSS + cora 自身鐘擺 telemetry;雙背書)。
 
 ---
 
@@ -16,7 +17,7 @@
 - **血統與 v2 定位**(2026-06-28,翻 cora 出生史得出):builder-pm **不是從零發明**。cora 是 2026-03 從模板 **`amber-stack`**(`tvbs-amberchang`,private)scaffold 出來的,而 amber-stack 自述就是「AI collaboration framework for PM-driven product development with Claude Code」—— builder-pm 的**同一使命**。所以 **amber-stack = v1**(已驗證好用:結構 / 12-agent 團隊 / 4 條設計原則含 Single Source of Truth / `setup.sh` 冷啟動問答 / `{{placeholder}}` 填空)。
   - **但 v1 只有「種子」、沒有「長樹機制」** → 種下去就沒人管 → 三個症狀:**會膨脹 / 不會自我精進 / 抓不到文字+code drift**(amber-stack 明寫了「每條規則只存一處」,cora 還是 drift 成 README 12 條 vs CLAUDE 13 條 → 證明**寫下原則 ≠ 守得住**)。
   - **builder-pm = v2 = amber-stack 種子 + 三個自我維持迴圈**(這就是 §7「種子缺陷 4 修」存在的理由):
-    - **防膨脹迴圈** —— 規則零遵循自動鬆綁/退役(不只會加)→ §4 + §1.5 種子缺陷 #1 · ⬜ 未建
+    - **防膨脹迴圈** —— 規則零遵循自動鬆綁/退役(不只會加)→ §4.1 + §1.5 種子缺陷 #1 · 🚧 設計鎖定 + 種子 prototype(`loops/anti-bloat/`)
     - **學習迴圈** —— 踩雷自動捕捉 → 累積 → 畢業成規則 → §4 種子缺陷 #3 · 🟡 設計了、捕捉引擎未真動
     - **drift 守門迴圈** —— 文字/契約不一致會擋 → §5.5 · ✅ 已建可跑 prototype
   - 一句話:**v1 給你會枯的漂亮盆栽;v2 加上會自己澆水/修枝/不亂長的機制。**
@@ -49,7 +50,7 @@
 - drift 容忍中間層、real-path UAT、Engineer-led 輕量路徑、併發鎖定 / worktree、branch hygiene 三段式
 
 **🔧 種子本身要補的缺陷(來自 gap-audit,做實體檔時處理):**
-- 學習迴圈對稱化(升級 + **降級** / 規則 fitness review)
+- 學習迴圈對稱化(升級 + **降級** / 規則 fitness review)→ ✅ 設計鎖定 §4.1 + 🚧 prototype `loops/anti-bloat/`(照 Hermes Curator DNA + override 訊號)
 - 冷啟動流程(目前只有空模板,缺「怎麼起步」的流程)
 - 捕捉引擎要真的會動 —— **§4「半自動 hook 捕捉」cora 其實沒有**,屬淨新建待實作(見 §4 校正)
 - 跨專案版本治理(可重用包必備:核心/模組更新怎麼傳到 N 個已裝專案)
@@ -180,6 +181,34 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 
 **畢業**:strike 2 → 升級成 規則 / 硬關卡 / skill / 升上包(通用教訓播種未來專案)。
 
+### 4.1 防膨脹(規則降級)= 畢業的鏡像 — ✅ 設計鎖定(2026-06-28)
+
+> grounding:Hermes **`Curator`**(已上線 OSS,有測試 + 文件 + issue #7816,見 repo `website/docs/user-guide/features/curator.md`)+ cora 自身鐘擺 telemetry(**雙背書:外部 OSS 設計 + 內部實證**,對應 Rule #7「不用直覺覆蓋業界 pattern」)。Curator 把「沒人用的 skill」沿 `active → stale → archived` 推、**從不刪只封存可還原**;builder-pm 把同一形狀搬來治「沒人遵守的規則」。
+
+**為何非建不可**:學習迴圈(§4 畢業)只會「往上加」,不補降級 → 新專案規則只增不減,終究長回那個重到記不住的 cora(正是要逃離的)。防膨脹是它缺的對稱另一半 —— **與畢業共用同一套 strike + frontmatter,只是反方向跑**。
+
+**訊號(旁掛 sidecar,不污染規則正文 = Curator `.usage.json` 模式):**
+- **主訊號 = override 率**(規則觸發了卻被繞)。cora 鐵證:Rule #6「連續 ≥ 2 次 override 同 PR → 視為規則本身有問題」、Rule #8 因 telemetry `8/8 done_def:false` 砍半。**這是 builder-pm 與 Curator 唯一分家處** —— 規則的成本在「高摩擦」不在「閒置」(Curator 治 skill 用閒置正確;治規則要用 override)。
+- **副訊號 = 休眠**(長期零觸發),照 Curator inactivity 模型,低優先。
+- sidecar(`.governance/rule-usage.json`)屬本機 telemetry → **gitignore 不進 repo**(沿用 §4 界線 + 既有 telemetry Rule)。換機/交接會重置 strike 計數 → 由 first-run 寬限窗承接(= Curator fresh-install 行為),可接受。**只有「降級決定」進 repo**(規則移檔 = commit)。
+
+**兩段式 run(= Curator 便宜偵測 + opt-in 判斷):**
+1. **確定性偵測(無 LLM、便宜、常開)**:算 strike、跨門檻列「規則健身報告」;**只報告不攔截**(防膨脹是迴圈、不是關卡)。
+2. **判斷(opt-in)**:AI 草擬鬆綁/退役建議,**PM 拍板**。貴的判斷才花成本(= Curator 的 LLM consolidation 預設 OFF)。
+
+**觸發**:閒置檢查非 cron(session 收尾 / 隔 N 個 PR 一次),不打斷工作(= Curator 的 idle-check 而非 daemon)。
+
+**安全欄(非協商,全抄 Curator 踩過的坑):**
+1. **核心憲章 10 條 = protected**,永不自動退役(= Curator 硬編 protected built-ins,如 `plan` 撐 `/plan`)。
+2. **never delete** —— 只降級/鬆綁/標 stale,移進 `.governance/retired/` 可還原;動前先快照(= Curator 跑前自動 tar 快照 + 一鍵 rollback)。
+3. **first-run 寬限窗** —— 新專案無 override 史 → 不立即退役任何規則(= Curator seed-on-first-sight,直接解「種子 day1 無資料」)。
+4. **PM pin** —— 可釘任何規則豁免(= Curator pin)。
+5. **jurisdiction** —— 只管「畢業上來 / 模組帶的」規則,**絕不碰 PM 手寫拍板的核心意圖**(= Curator only-agent-created,人手寫的一律不動)。
+
+**降級階梯(對應升級階梯)**:規則被繞 → friction strike +1 → 跨門檻列候選 → PM 審 → 鬆綁(條件放寬 / 降風險級)或 退役(移 `.governance/retired/`,可還原)。
+
+**種子實作**:`loops/anti-bloat/` 提供最小、自帶測試的 **Phase 1**(確定性偵測 + protected 清單 + 寬限窗 + dry-run 報告)當範本(示範「對的防膨脹自動化長怎樣」);Phase 2 判斷留給 AI/PM,不寫死。與 §5.5 drift 範本並列,但 `gates/`(會擋)vs `loops/`(只報告)刻意分家。
+
 **不做**:RAG、SQLite/向量庫(過度工程;規模不到。要 filter 用 frontmatter,要 session 搜尋未來用 FTS5 關鍵字,與 LESSONS 分離)。
 
 **參考來源**:Hermes-agent 真實程式碼 —— `agent/memory_manager.py`(turn 前 prefetch / turn 後 sync 的生命週期)+ `agent/learn_prompt.py`(`/learn` 顯式蒸餾 + HARDLINE 品質標準)。README 的「periodic nudge」查證為行銷話術,程式碼無此機制。
@@ -256,7 +285,7 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 - [x] 重心校正 forward-first + 新增 §1.5 種子骨架(← PM 2026-06-27)
 - [x] 全治理盤點 → 28 盲區報告 `docs/gap-audit.md`
 - [x] 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `docs/inventory-deep.md`;套入 6 條修正(2026-06-28)
-- [ ] **種子缺陷 4 修**(學習迴圈補降級 / 冷啟動流程 / 捕捉引擎真的會動 / 跨專案版本治理)
+- [ ] **種子缺陷 4 修**(~~學習迴圈補降級~~ ✅ 設計鎖定 §4.1 + prototype `loops/anti-bloat/` / 冷啟動流程 / 捕捉引擎真的會動 / 跨專案版本治理)
 - [ ] 把種子骨架(§1.5 🌱 那串)寫成實體檔案 + agent 骨架模板(空白員工合約)
 - [ ] 洞 2:核心把「SDD+TDD 紀律」與「openspec 工具」分兩層寫(§2.5.6)
 - [ ] 「該長出來」清單(§1.5 🌳)做成進階模組 / known-divergence,**非主線**

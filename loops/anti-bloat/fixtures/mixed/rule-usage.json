@@ -1,0 +1,11 @@
+{
+  "_note": "本機 telemetry sidecar（累積計數）。真實專案中此檔應 gitignore；fixture 內是範例樣本，不算正式 telemetry。asof 當『今天』讓判定可重現。",
+  "asof": "2026-06-28",
+  "rules": {
+    "core-01-no-guessing": { "trigger_count": 30, "override_count": 30, "last_triggered_at": "2026-06-27" },
+    "grown-done-definition-5seg": { "trigger_count": 8, "override_count": 8, "last_triggered_at": "2026-06-20" },
+    "grown-tdd-backend": { "trigger_count": 12, "override_count": 1, "last_triggered_at": "2026-06-25" },
+    "grown-pr-merge-harness": { "trigger_count": 9, "override_count": 0, "last_triggered_at": "2026-03-01" },
+    "grown-codex-review-loop": { "trigger_count": 2, "override_count": 2, "last_triggered_at": "2026-06-26" }
+  }
+}

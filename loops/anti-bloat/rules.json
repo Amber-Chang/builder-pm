@@ -1,0 +1,12 @@
+{
+  "_note": "預設示範用規則登記表。無參數跑 `node check-rule-fitness.cjs` 時讀此檔，搭配同目錄 rule-usage.json 跑出混合報告。實際專案請改成自己的規則清單。",
+  "grace_min_observations": 5,
+  "rules": [
+    { "id": "core-01-no-guessing", "tier": "core", "protected": true },
+    { "id": "core-08-no-ai-artifact-in-pr", "tier": "core", "protected": true },
+    { "id": "grown-done-definition-5seg", "tier": "grown", "protected": false, "override_rate_threshold": 0.5, "dormancy_days": 60 },
+    { "id": "grown-tdd-backend", "tier": "grown", "protected": false, "override_rate_threshold": 0.5, "dormancy_days": 90 },
+    { "id": "grown-pr-merge-harness", "tier": "grown", "protected": false, "override_rate_threshold": 0.5, "dormancy_days": 30 },
+    { "id": "grown-codex-review-loop", "tier": "grown", "protected": false, "override_rate_threshold": 0.5, "dormancy_days": 45 }
+  ]
+}

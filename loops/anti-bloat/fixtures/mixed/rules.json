@@ -1,0 +1,12 @@
+{
+  "_note": "規則登記表 + 門檻設定。混合情境 fixture：刻意同時跑出 🔴 摩擦 / 🟡 休眠 / ✅ 健康 / 🔒 protected / ⏳ 寬限，示範完整報告長相。",
+  "grace_min_observations": 5,
+  "rules": [
+    { "id": "core-01-no-guessing", "tier": "core", "protected": true },
+    { "id": "core-08-no-ai-artifact-in-pr", "tier": "core", "protected": true },
+    { "id": "grown-done-definition-5seg", "tier": "grown", "protected": false, "override_rate_threshold": 0.5, "dormancy_days": 60 },
+    { "id": "grown-tdd-backend", "tier": "grown", "protected": false, "override_rate_threshold": 0.5, "dormancy_days": 90 },
+    { "id": "grown-pr-merge-harness", "tier": "grown", "protected": false, "override_rate_threshold": 0.5, "dormancy_days": 30 },
+    { "id": "grown-codex-review-loop", "tier": "grown", "protected": false, "override_rate_threshold": 0.5, "dormancy_days": 45 }
+  ]
+}
