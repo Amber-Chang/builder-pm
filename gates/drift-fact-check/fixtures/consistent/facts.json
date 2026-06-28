@@ -1,0 +1,11 @@
+{
+  "facts": [
+    {
+      "id": "charter-rule-count",
+      "description": "核心憲章規則數",
+      "value": 10,
+      "pattern": "核心憲章[^\\n]*?(\\d+)\\s*條",
+      "files": ["01-charter.md", "02-onboarding.md", "03-handbook.md"]
+    }
+  ]
+}

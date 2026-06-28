@@ -1,0 +1,16 @@
+{
+  "_note": "單一真相來源（single source of truth）。預設 facts，指向 consistent fixtures 作為開箱即綠的範例。",
+  "facts": [
+    {
+      "id": "charter-rule-count",
+      "description": "核心憲章規則數（builder-pm 自己的核心是 10 條）",
+      "value": 10,
+      "pattern": "核心憲章[^\\n]*?(\\d+)\\s*條",
+      "files": [
+        "fixtures/consistent/01-charter.md",
+        "fixtures/consistent/02-onboarding.md",
+        "fixtures/consistent/03-handbook.md"
+      ]
+    }
+  ]
+}

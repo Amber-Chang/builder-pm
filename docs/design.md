@@ -32,6 +32,7 @@
 - **雙語慣例表**(繁中產品 day1 必備):code 註解 / godoc / 變數 = 英文;markdown 正文 / commit / PR / issue = 繁中;yaml structural keys / enum / ID 保留英文。附反例「PM 講中文 ≠ 註解也寫中文」;派工 prompt 模板要預填此邊界(否則派 sub-agent 收到全英文交付)
 - **provenance 去硬編紀律**:做實體檔前全 repo 掃 `/Users/`、repo slug、token/key,一律改 templated/env 佔位;種子 settings 模板絕不含明文 secret(cora 現狀 `settings.local.json` 明文存 key = 反例)
 - **盤點分類紀律「未啟用機制 ≠ 死碼」**:逐檔裁決前先看讀/寫路徑是否接線;「地基鋪好尚未接線」(如 cora `error-patterns.json`)不是死碼,別反射性砍(此尺直接防 §6 對照搬家砍錯承重牆)
+- **Drift 守門原則**(§5.5):文件 DRY(同一事實只寫一處)> 偵測;任何 drift checker 必附測試否則不准進包(cora 親身教訓:死殼 + 維護怪獸)
 
 **🌳 該長出來(不 ship,隨專案長):**
 - 多模型 / `.codex` 第二治理樹(加第二個模型家族才需要)⚠️ 但**不是純可選**:模組⑥(PR 防呆)對 `.codex/review-agent/lib/github.cjs` 有 live `require` 依賴 → 要帶 ⑥ 就得內聯該 helper 或連帶拉進這支 lib,不能「砍 .codex + 留 ⑥」並存(見 §3 註)
@@ -195,6 +196,42 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 - **第三類「人工 fail-closed 啟用閘」(grow,非自動關卡)**:cora 對資安敏感功能(SES 憑證 / SSRF / Git push)採「code 已 merge 但需真人資安工程師簽核才准**啟用**」紀律(合入 ≠ 上線)。這是不靠 code、純靠 PM/工程紀律的安全邊界,與契約 gate(gap-audit B2)不同類;種子保留此 **pattern**,gate 內容隨專案長。
 - **機密進出衛生**:攔截① 只防 AI 產物**出站**;要再防(a)**入站** —— secret 貼進對話 / `.env` 進 repo;(b)**設定檔現狀** —— cora `settings.local.json` / `.mcp.json` 明文存 ClickUp key 是反例。種子 settings 模板**絕不含明文 key**,README 明標 cora 現狀為反面教材。
 
+## 5.5 Drift 守門:三類 × 解法階層 — ✅ 鎖定(2026-06-28)
+
+> 來源:PM 提問「文件雙重維護 / drift 能不能用腳本可靠避免」+ 讀 cora 三支 drift 腳本實況。結論:**能,但預防 > 偵測,最關鍵那層不需腳本。**
+
+**cora 的教訓(反面教材)**:寫了 3 支 drift 腳本 —— `check-drift.sh` 窄到只認一個 role 名(靠 11 條手刻 regex,自己變維護怪獸)、`check-file-linkage.sh` 純嘮叨、`check-terminology.sh` 死殼。**沒一支抓得到「README 12 條 vs CLAUDE.md 13 條」。「寫支腳本」不是銀彈,腳本本身會 drift。**
+
+**drift 三類 × 自動化難度:**
+
+| 類型 | 例子 | 能自動化 | 正解 |
+|------|------|:---:|------|
+| **A 字面事實重複** | 規則數 / 路徑 / 版本 / 清單長度 | ✅ 便宜 | **去重(別寫兩遍)> 偵測** |
+| **B 壞掉的引用** | 連到已改名 §X / 已移走的檔 | ✅ 中等 | link / anchor checker |
+| **C 語意矛盾** | ADR vs SPEC 欄位名、per-commit vs per-PR | ❌ 腳本做不到 | LLM / 人 |
+
+**解法階層:**
+1. **預防 > 偵測** —— 能去重就去重(單一真相來源)。最省最可靠,**不需腳本**。
+2. **非重複不可 → 小而有測試的 gate**(A / B 類)。
+3. **語意層(C)→ LLM / 人**,做成「定期定點掃」非「每次手翻」(此層「靠 agent 翻文件」是對的工具,不是失敗)。
+
+**鐵則**:任何 drift checker **要嘛附測試 + owner,要嘛別生** —— 否則就是下一個死殼(`check-terminology`)或維護怪獸(`check-drift` 的 11 條 regex)。這條是 cora 親身教訓,直接焊進種子。
+
+**種子實作**:`gates/drift-fact-check/` 提供一個最小、自帶測試的「字面事實一致性」檢查當**範本**(示範「對的自動化長怎樣」),非通用神器。
+
+**業界佐證(2026-06-28 · ≥3 對標 + 證據;對應 Rule #7「不用直覺覆蓋業界 pattern」)**
+
+本節「預防 > 偵測」階層與「checker 必附測試」鐵則,**不是憑感覺排的** —— 與業界主流一致,可被外部檢視:
+
+| 對標 | 在做什麼(白話) | 對應本節 | 用者 / 來源 |
+|------|----------------|---------|------------|
+| **cog (cogapp)** `--check` | 真相只寫一處,程式自動長進文件,CI 確認沒漂掉 | 預防派 | [nedbatchelder.com/code/cog](https://nedbatchelder.com/code/cog/index.html) |
+| **`go generate` + `git diff --exit-code`** | CI 重跑自動產生再比對,有差就擋(= cora codegen-drift CI) | 預防派 | [Go 社群通用](https://github.com/golangci/golangci-lint/issues/20) |
+| **syncpack** | monorepo 多份設定檔的版本號不一致就 CI 報錯 | 偵測派(= 本節 prototype 同型) | [syncpack.dev](https://syncpack.dev/)(AWS / 微軟 / Vercel / DataDog) |
+| **Stryker(mutation testing)** | 「測試的測試」:故意塞 bug 看測試會不會變紅,證明測試自己會 fail | 測試原理(prototype「漂移那題」= 手動版) | [stryker-mutator.io](https://stryker-mutator.io/docs/)(微軟 .NET 內建) |
+
+**佐證結論**:業界偏「預防」(cog / go generate 讓文件不給機會漂移),「偵測」(syncpack)是去重不掉時的補保險 —— 與本節階層完全一致。**「測試要能 fail」由 mutation testing 整套技術背書**,prototype 的正反兩題即其手動體現。
+
 ## 6. 套回 cora(選用後路,非主線)— ⬜ 待執行
 
 > 2026-06-27 重心校正後,「套回 cora」**降為選用後路**:主線是 forward 種新專案(§1 / §1.5)。若哪天要把輕量包裝回 cora 取代舊治理,以下仍適用,但不是這個包的存在理由。
@@ -215,4 +252,7 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 - [ ] 把種子骨架(§1.5 🌱 那串)寫成實體檔案 + agent 骨架模板(空白員工合約)
 - [ ] 洞 2:核心把「SDD+TDD 紀律」與「openspec 工具」分兩層寫(§2.5.6)
 - [ ] 「該長出來」清單(§1.5 🌳)做成進階模組 / known-divergence,**非主線**
+- [x] Drift 守門原則定案 → §5.5(三類 × 解法階層 + checker 必附測試鐵則)(2026-06-28)
+- [ ] drift-fact-check 最小 prototype(`gates/drift-fact-check/`,自帶測試)→「對的自動化長怎樣」範本
+- [ ] (cora 側·非主線)修 README「12 條」A 類 drift:正解是**去重/引用**(README 不報數字、指向 CLAUDE.md),非加偵測腳本
 - [ ] (選用後路)套回 cora 的對照搬家(§6;可用 gap-audit + 全 `.claude/` 掃描當底稿)
