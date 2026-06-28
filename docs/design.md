@@ -458,10 +458,10 @@ Day-N(邊做邊長)
 - [x] 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `docs/inventory-deep.md`;套入 6 條修正(2026-06-28)
 - [x] **種子缺陷 4 修全結案**(2026-06-28):~~#1 學習迴圈補降級~~ ✅ §4.1 `loops/anti-bloat/` / ~~#2 冷啟動~~ ✅ §4.3 + `loops/context-growth/`(f8376f0,codex 審無 BLOCK)/ ~~#3 捕捉引擎~~ ✅ §4.2 `loops/learning-capture/` / ~~#4 跨專案版本治理~~ ✅ §1.6 **決定刻意不做**(scaffold 非 live dependency,記錄理由)
 - [x] 冷啟動 `.md` 收尾(2026-06-28):`onboarding/context-templates/`(SYSTEM/GLOSSARY/CONVENTIONS/modules 四份空骨架)+ `onboarding/ONBOARDING.md` 開工流程文件 → **§4.3 種子實作全到位**
-- [~] 把種子骨架寫成實體檔 + 4 角色空白員工合約 + `setup.sh` 安裝器(§1.7 架構鎖定;薄核心 `.md` 批 main 直編、`setup.sh` 派 sub-agent)— **進行中** 2026-06-28
+- [x] 把種子骨架寫成實體檔 + 4 角色空白員工合約 + `setup.sh` 安裝器(§1.7 架構鎖定)— **完成** 2026-06-29:薄核心 9 檔 + 51 rename 進 `template/`;`setup.sh` 三道把關過(codex 審 3 finding 修畢、M1 symlink 種子防護用變異測試殺死);builder-pm 已 push 上 GitHub
 - [x] 洞 2:「SDD+TDD 紀律」與「openspec 工具」分兩層 → §2.5.7(openspec 歸 Generator SDD、opt-in)(2026-06-28)
-- [ ] **review-agent 抽成獨立 repo + plugin**(② 工具類;seed 之後的下一個里程碑;Codex 支援 plugin 已查證 §1.7)
-- [ ] (收尾)cora-governance-notes 舊設計副本換成指回 builder-pm 正本 / 或刪(停同步後避免讀到舊版)
+- [x] **review-agent 抽成獨立 repo + plugin**(2026-06-29):`Amber-Chang/codex-pr-review`(private,config 載入器通用化、消費端自供 + 安全預設)+ 補 `.claude-plugin/` manifest → Claude Code 一鍵裝(`/plugin marketplace add` + `/plugin install`);`setup.sh` Codex 模組已接此一鍵流程
+- [x] (收尾)cora-governance-notes 舊設計副本(`pm-governance-pack-design.md`)2026-06-29 換成指回 builder-pm 正本的指標(避免讀到舊版);同目錄 `governance-inventory-draft.md` 為獨立盤點底稿、不在此次清理範圍、保留
 - [ ] 「該長出來」清單(§1.5 🌳)做成進階模組 / known-divergence,**非主線**
 - [x] Drift 守門原則定案 → §5.5(三類 × 解法階層 + checker 必附測試鐵則)(2026-06-28)
 - [ ] drift-fact-check 最小 prototype(`gates/drift-fact-check/`,自帶測試)→「對的自動化長怎樣」範本
