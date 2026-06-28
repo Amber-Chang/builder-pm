@@ -8,7 +8,8 @@
 > 2026-06-28 新增 §5.5 Drift 守門 + `gates/drift-fact-check` 範本;翻 cora 出生史確認 **amber-stack = builder-pm v1**,v2 定位 = v1 種子 + 三個自我維持迴圈(防膨脹/學習/drift),見 §1。
 > 2026-06-28 新增 §4.1 防膨脹(規則降級)迴圈 + `loops/anti-bloat/` 範本(grounding:Hermes `Curator` OSS + cora 自身鐘擺 telemetry;雙背書)。
 > 2026-06-28 新增 §4.2 學習捕捉引擎 + `loops/learning-capture/` 範本(grounding:Hermes `background_review` 自動捕捉);**自我修正**舊筆記「Hermes 沒自動 nudge=行銷話術」之誤(Rule #12)。§1 北極星 PM 角色校準=治理包非 runtime。三迴圈設計全鎖定。
-> 2026-06-28 新增 §4.3 冷啟動 onboarding + 知識層成長偵測(種子缺陷 #2);grounding v1 `setup.sh` + cora `.context/` 真實成長史 + 三迴圈當成長引擎。修 v1「day-0 叫 PM 填 SYSTEM」早問 bug。偵測「何時該填」**誠實分級**:GLOSSARY/conventions 可確定性偵測、SYSTEM 是判斷題只能 proxy(Rule #12 不過度承諾 + §5.5 死殼鐵則)。
+> 2026-06-28 新增 §4.3 冷啟動 onboarding + 知識層成長偵測(種子缺陷 #2);grounding v1 `setup.sh` + cora `.context/` 真實成長史 + 三迴圈當成長引擎。修 v1「day-0 叫 PM 填 SYSTEM」早問 bug。偵測「何時該填」**誠實分級**:GLOSSARY/conventions 可確定性偵測、SYSTEM 是判斷題只能 proxy(Rule #12 不過度承諾 + §5.5 死殼鐵則)。prototype `loops/context-growth/`(commit f8376f0,codex 審無 BLOCK)。
+> 2026-06-28 新增 §1.6 更新模型(PM 拍板「刻意不做跨專案推送」);種子缺陷 #4 結論=決定不建自動 propagation(scaffold 非 live dependency,grown 內容永不覆蓋)。**四個種子缺陷至此全結案。**
 
 ---
 
@@ -59,6 +60,31 @@
 - 跨專案版本治理(可重用包必備:核心/模組更新怎麼傳到 N 個已裝專案)
 
 > 完整 28 盲區 + triage 見 `docs/gap-audit.md`。
+
+## 1.6 更新模型:開工模板,非自動更新套件 — ✅ 鎖定(2026-06-28,PM 拍板「刻意不做跨專案推送」)
+
+> 對應 §7 種子缺陷 #4「跨專案版本治理」。**結論:刻意不建自動推送引擎**;#4 = 「想清楚後決定不做」,非遺漏。
+
+**判斷**:builder-pm 是 **scaffold(開工模板),不是 live dependency(會自動更新的套件)**。裝進新專案後,專案就「長成自己的樣子」,硬把核心/模組更新推回去會與長出來的內容打架(PM 2026-06-28 洞見:「都長成那專案的樣子了,更新下去搞不好互斥」)。
+
+**兩類內容、兩種待遇**:
+
+| 內容 | 更新待遇 |
+|------|---------|
+| 引擎/機制(`loops/*` `gates/*` 的 code、hooks、核心憲章)| 專案不手改 → **可手動重新拉**新版(無衝突);不自動推 |
+| 專案長出來的(`.context/` 知識層、`.governance/` lessons/conventions)| **永不覆蓋** —— 各專案本就該分歧,這是設計目的 |
+
+**刻意不做**:跨 N 專案的自動 propagation 引擎(版本廣播 / 自動 merge)。某專案要某支引擎修補 → 自己手動重新拉那幾支檔即可;無中央推送、無自動 merge。
+
+**業界佐證(≥3,portfolio;對應 Rule #7)**:
+
+| 對標 | 證據 |
+|------|------|
+| **cookiecutter** | scaffold 完即你的、不回流更新 —— 主流模板工具預設 |
+| **copier / `rails app:update`** | 少數「想支援模板更新」的,用 3-way merge → **實際會產生衝突**,正是 PM 擔心的「互斥」的實證 |
+| **npm / library 模型** | 更新能流動**只因**你不改 `node_modules`;一旦 fork 改它更新就回不去 —— 印證「不手改的才可更新」分界 |
+
+**結論**:四個種子缺陷(#1 防膨脹 / #2 冷啟動 / #3 捕捉引擎 / #4 跨專案版本治理)**至此全結案**(#1#2#3 = 建機制;#4 = 決定不建、記錄理由)。
 
 ## 2. 核心憲章(一頁 / 10 條 / 4 桶)— ✅ 鎖定
 
@@ -292,7 +318,7 @@ Day-N(邊做邊長)
 
 **`/onboard` 引導流程**:① 確認技術棧 → ② 帶 PM 起第一版 PRD(接 brainstorming)→ ③〔選用·可跳,**建議留**〕day-1 跑一次極小真派工,讓 PM 親眼看「派工→驗證→commit」整條 harness 會動 → ④ 講清楚「`.context` 是空的、會這樣長」+ 附上面成長表。
 
-**種子實作**(待 PM 拍板派工):`loops/context-growth/` 最小 Phase-1 偵測器(glossary-candidate + lesson-graduation + spec-coverage,自帶測試、report-only)+ `.context/` 空骨架模板(各檔頂端帶「我會這樣長」註記,修掉 v1 早問 bug)+ `/onboard` 流程文件。
+**種子實作**(✅ 已建):`loops/context-growth/` Phase-1 偵測器(glossary-candidate + lesson-graduation + spec-coverage + system proxy,自帶測試、report-only,commit f8376f0)+ `onboarding/context-templates/` 四份 `.context/` 空骨架(各檔頂端帶「我會這樣長」+ 成長觸發 + 偵測器掛勾註記,修掉 v1 早問 bug)+ `onboarding/ONBOARDING.md` 開工流程文件(day-0 四步 + day-N 成長表)。註:目前 `/onboard` 是流程文件,變成真 slash 指令留待後續。
 
 **業界佐證(≥3 對標,portfolio;對應 Rule #7)**
 
@@ -377,7 +403,8 @@ Day-N(邊做邊長)
 - [x] 重心校正 forward-first + 新增 §1.5 種子骨架(← PM 2026-06-27)
 - [x] 全治理盤點 → 28 盲區報告 `docs/gap-audit.md`
 - [x] 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `docs/inventory-deep.md`;套入 6 條修正(2026-06-28)
-- [ ] **種子缺陷 4 修**(~~學習迴圈補降級~~ ✅ §4.1 + `loops/anti-bloat/` / ~~冷啟動流程~~ ✅ 設計 §4.3(prototype `loops/context-growth/` 待派工)/ ~~捕捉引擎真的會動~~ ✅ §4.2 + `loops/learning-capture/` / 跨專案版本治理)→ **剩 #4 跨專案版本治理(+ #2 prototype 待派工)**
+- [x] **種子缺陷 4 修全結案**(2026-06-28):~~#1 學習迴圈補降級~~ ✅ §4.1 `loops/anti-bloat/` / ~~#2 冷啟動~~ ✅ §4.3 + `loops/context-growth/`(f8376f0,codex 審無 BLOCK)/ ~~#3 捕捉引擎~~ ✅ §4.2 `loops/learning-capture/` / ~~#4 跨專案版本治理~~ ✅ §1.6 **決定刻意不做**(scaffold 非 live dependency,記錄理由)
+- [x] 冷啟動 `.md` 收尾(2026-06-28):`onboarding/context-templates/`(SYSTEM/GLOSSARY/CONVENTIONS/modules 四份空骨架)+ `onboarding/ONBOARDING.md` 開工流程文件 → **§4.3 種子實作全到位**
 - [ ] 把種子骨架(§1.5 🌱 那串)寫成實體檔案 + agent 骨架模板(空白員工合約)
 - [ ] 洞 2:核心把「SDD+TDD 紀律」與「openspec 工具」分兩層寫(§2.5.6)
 - [ ] 「該長出來」清單(§1.5 🌳)做成進階模組 / known-divergence,**非主線**
