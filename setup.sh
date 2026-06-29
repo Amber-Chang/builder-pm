@@ -121,6 +121,7 @@ case "$TARGET_ABS" in
     ;;
 esac
 
+BROWNFIELD_DETECTED=n
 if [ -e "$TARGET_ABS" ] && [ -n "$(ls -A "$TARGET_ABS" 2>/dev/null)" ]; then
   echo ""
   echo "警告：目標資料夾已存在且非空：$TARGET_ABS"
@@ -129,6 +130,10 @@ if [ -e "$TARGET_ABS" ] && [ -n "$(ls -A "$TARGET_ABS" 2>/dev/null)" ]; then
     [Yy]*) : ;;
     *) echo "已中止，未動任何檔案。" >&2; exit 1 ;;
   esac
+  # 精準判斷：有 .git → 既有 git 專案，裝完提醒跑 /backfill-context
+  if [ -d "$TARGET_ABS/.git" ]; then
+    BROWNFIELD_DETECTED=y
+  fi
 fi
 
 # 模組選擇
@@ -260,8 +265,11 @@ echo "  安裝完成！專案位於：$TARGET_ABS"
 echo "============================================"
 echo ""
 echo "下一步："
-echo "  1. 填 .context/SYSTEM.md（專案總覽）"
-echo "  2. 填 .context/GLOSSARY.md（術語表）"
+echo "  1. 讀 ONBOARDING.md（開工指南）—— 從空白到開始做怎麼走"
+echo "  2. 寫第一版 PRD（接 brainstorming）；先別填 SYSTEM/GLOSSARY，.context/ 會邊做邊長"
+if [ "$BROWNFIELD_DETECTED" = "y" ]; then
+  echo "  ⚡ 偵測到既有 git 專案 → 裝好後在 Claude 執行 /backfill-context，讓 AI 草擬 .context/ 三份文件"
+fi
 echo "  3. 在專案目錄執行：claude"
 echo ""
 echo "已啟用模組的指令（細節見 $TARGET_ABS/MODULES.md）："

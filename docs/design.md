@@ -384,6 +384,188 @@ Day-N(邊做邊長)
 
 > 佐證結論:業界主流是「薄起步 + 文件隨工作長 + 偵測缺口用 report-only」—— 與本節完全一致。連結待 finalize 時補查(arc42.org / diataxis.fr / Living Documentation 書)。
 
+### 4.4 brownfield 導入:`/backfill-context`(既有專案冷讀草擬知識層)— ✅ 鎖定(2026-06-29)
+
+> §4.3 的鏡像場景(§4.3 是 greenfield day-0,本節是 brownfield 半成品專案 day-N 導入)。產出自 brainstorming Q1–Q6 逐題拍板。設計正本在此;原 `docs/superpowers/specs/2026-06-29-brownfield-context-backfill-design.md` 為草擬來源(位置不對,Coordinator 處理)。
+
+**問題(為何 §4.3 不夠)**:§4.3 是**為全新專案 day-0 設計**——`.context/` 裝下去是空殼,靠三迴圈 day-N 邊做邊長。把這包接到一個**已開發到一半的既有專案**時兩個假設都破:
+
+- `.context/` 仍空,**舊專案藏在 code 裡的知識完全沒被捕捉**(沒人會回頭手填一整個既有系統的 SYSTEM/GLOSSARY)。
+- `loops/context-growth` 偵測器**方向相反**:你一動既有 code,spec-coverage / glossary-candidate 會狂噴「沒有對應 SPEC / 一堆術語沒進表」→ **噪音轟炸**而非補齊(那支偵測器假設「知識本來就在長」,brownfield 是「知識從來沒被寫下」)。
+
+→ 需要一個**一次性**的「冷讀現有專案 → 草擬 `.context/`」能力,把 day-N 偵測器降噪到可用。
+
+**已拍板 6 決定(Q1–Q6):**
+
+| # | 決定 | 為什麼 |
+|---|------|--------|
+| Q1 | **通用能力**,不對著特定專案設計 | 治理包要可攜(§1 北極星)|
+| Q2 | **隨需指令** `/backfill-context`(在 Claude 跑)+ `setup.sh` 偵測到既有專案時**提醒**去跑 | shell 跑不了 AI 草擬,只能提醒;一次性動作不該常駐 |
+| Q3 | 第一版草擬**三份**:SYSTEM + modules 清單 + GLOSSARY 候選 | CONVENTIONS 交回原機制(見下方非目標)|
+| Q4 | 讀取來源:**code + 專案現有文件 + git 歷史**(git 歷史需框上限)| 三來源互補;git 是「為什麼這樣做」的線索 |
+| Q5 | 草稿落地:寫**暫存區** `.context/.backfill/`,PM 逐份核可才搬正式 | 草稿 ≠ 真相(§4.3/§5.5 同魂);正式檔在 PM 拍板前永不含 AI 猜的 |
+| Q6 | 內部架構:**方案 B = 確定性蒐證(證據包)+ AI 草擬** | 蒐證層可測(§5.5 鐵則)、草擬層判斷;兩層分離 |
+
+**非目標(YAGNI,刻意不做):**
+- ❌ 不草擬 **CONVENTIONS** —— 維持「同類雷 ≥2 次畢業」機制(§4 畢業)。憑 code 反推「架構禁區」最易亂講、變死殼(§5.5)。
+- ❌ 不加新角色(不在四角色 harness 加 archivist,對 v1 過度設計)。
+- ❌ 不自動搬正式 —— 草稿永不自動進正式 `.context/`,一律 PM 拍板(Q5)。
+
+**元件與檔案落點**(沿用本包「腳本 + 自帶測試 + README + fixtures」形狀,同 `loops/context-growth/`;皆進 `template/` 種子):
+
+```
+template/
+  onboarding/backfill/                 ← 新增:確定性蒐證層(onboarding=開工一次性,非 loops 的 recurring)
+    scan-evidence.cjs                  # 掃描器:讀 code/docs/git → evidence.json
+    scan-evidence.test.cjs             # 自帶測試(§5.5 鐵則:checker 必附測試,否則別生)
+    fixtures/                          # 測試用假專案(sample / no-git / empty)
+    README.md                          # 用途 / evidence.json 格式 / 框上限 / 怎麼跑
+  .claude/commands/
+    backfill-context.md                ← 新增:隨需 slash 指令本體(本包第一個真指令)
+```
+
+- 蒐證層放 `onboarding/`(開工一次性)**而非 `loops/`**(recurring 迴圈)—— 語意才對;這也是 `template/onboarding/` 的第一個子目錄(目前不存在,本案新建)。
+- 這是本包第一個真 slash 指令(`/onboard` 目前仍只是 `template/ONBOARDING.md` 流程文件,且 `template/.claude/` 目前無 `commands/` 夾)→ 順手立「指令怎麼寫」範本,未來 `/onboard` 跟進。
+- 核心:**蒐證層(可測、確定性)** 與 **草擬層(AI 判斷)** 分離 —— 對齊 §4.1/§4.3「確定性偵測 → AI 草擬 → PM 拍板」三段。
+
+**`evidence.json` 結構**(確定性蒐證層唯一輸出;欄位齊全才能讓 AI 草擬有據、REPORT 能誠實交代框了多少):
+
+```jsonc
+{
+  "schema_version": 1,
+  "project_root": "<掃描根,相對或絕對>",
+  "limits": {                    // 這次跑的框上限快照(讓 REPORT 能說「我框了多少」)
+    "module_top_n": 20,
+    "max_files_scanned": 500,
+    "git_log_last_n": 100,
+    "top_terms_n": 50,
+    "doc_extract_max": 50
+  },
+  "sources_present": {           // 優雅降級:哪些來源在/不在
+    "git": true,
+    "docs": true,
+    "dependency_manifests": ["package.json"]   // 找到的依賴檔清單(沒有則空陣列)
+  },
+  "truncation": {                // 誠實:哪些來源因框上限被截斷(REPORT 要明列)
+    "modules_truncated": false,
+    "files_truncated": false,
+    "git_truncated": false,
+    "docs_truncated": false
+  },
+  "module_tree": [               // 候選模組清單(信心 🟢 高:來自資料夾結構)
+    {
+      "name": "segmentation",
+      "path": "src/segmentation",
+      "file_count": 42,
+      "languages": ["ts"],
+      "sample_files": ["src/segmentation/index.ts"]   // 給 AI 抽看用,框上限
+    }
+  ],
+  "terms": [                     // 高頻識別字/術語 + 出處(信心 🟡:GLOSSARY 候選)
+    {
+      "term": "journey_id",
+      "frequency": 87,
+      "samples": [{ "file": "src/journey/store.ts", "line": 14 }]   // 框上限 N 筆
+    }
+  ],
+  "docs": [                      // 文件擷取(信心 🟡:餵 SYSTEM 目的)
+    { "path": "README.md", "title": "Journey Engine", "first_sentence": "..." }
+  ],
+  "git_log": [                   // git 標題(框上限近 N 筆;非 git repo → 空陣列)
+    { "subject": "feat: add segmentation rules" }
+  ],
+  "external_integrations": [     // 依賴推外部整合(信心 🟢 高:依賴檔)
+    { "name": "@aws-sdk/client-ses", "source": "package.json", "inferred_kind": "email/SES" }
+  ]
+}
+```
+
+> 設計取捨:`evidence.json` **刻意不寫 `generated_at` 時間戳** —— 對齊 `context-growth`「不碰 `Date.now()`」的確定性保證(同輸入位元一致 → 測試可斷言、重跑可比對)。「何時跑的」由 REPORT(AI 層產出)記。
+
+**掃描器框上限**(預設值;皆寫成頂端具名常數讓專案可調,`limits` 同步寫進 `evidence.json` 供 REPORT 引用):
+
+| 常數 | 預設 | 管什麼 | 超過時 |
+|------|:---:|--------|--------|
+| `MODULE_TOP_N` | 20 | 候選模組數(按 source 檔數排序取前 N)| `truncation.modules_truncated=true`,REPORT 明列「只取前 20 大模組」 |
+| `MAX_FILES_SCANNED` | 500 | 詞頻掃描讀檔總數上限 | `files_truncated=true` |
+| `GIT_LOG_LAST_N` | 100 | 讀近 N 筆 commit 標題 | `git_truncated=true` |
+| `TOP_TERMS_N` | 50 | GLOSSARY 候選詞數(按頻率取前 N)| 依詞頻截斷,REPORT 註明 |
+| `DOC_EXTRACT_MAX` | 50 | 擷取標題+首句的 doc 數上限 | `docs_truncated=true` |
+
+> ⚠️ **預設值待 PM 拍板**:以上數字是依「中型 repo 一次跑完不爆、又夠 AI 草擬有料」估的,非鐵律;真實大 repo 驗過再調。Generator 寫成具名常數即可,別硬編散在邏輯裡。
+
+**資料流:**
+
+```
+PM 在既有專案裝好 builder-pm → 在 Claude 跑 /backfill-context
+  │
+  1) 跑 scan-evidence.cjs(確定性、框上限、優雅降級)
+  │     → .context/.backfill/evidence.json
+  │
+  2) AI 讀 evidence.json + 抽看 sample_files 關鍵檔 → 草擬進暫存區
+  │     .context/.backfill/SYSTEM.draft.md          (帶信心橫幅 + 出處)
+  │     .context/.backfill/modules.draft.md
+  │     .context/.backfill/GLOSSARY.candidates.md
+  │     .context/.backfill/REPORT.md   (讀了什麼/框了多少/各份信心/哪裡要你判斷/怎麼搬正式)
+  │
+  3) PM 逐份審 → 改 → 「搬正式」(覆寫對應 .context/ 正式檔)
+        正式 .context/ 在 PM 拍板前永遠不含 AI 猜的內容
+```
+
+**信心標記表**(讓「草稿 ≠ 真相」可操作;每條草擬內容帶信心 + 出處,🔴/🟡 在草稿裡用顯眼橫幅標出):
+
+| 草擬內容 | 信心 | 出處 |
+|---------|:---:|------|
+| 主要模組清單、外部整合 | 🟢 高 | 資料夾結構 / 依賴檔(`module_tree` / `external_integrations`)|
+| 系統目的(SYSTEM)| 🟡 中 | README/docs;找不到 → 標「請你補」 |
+| 資料流(SYSTEM)| 🔴 低 | AI 推測,明顯標「待確認」 |
+| GLOSSARY 候選詞 | 🟡 中(待 triage)| 高頻識別字,全部當候選、PM triage(不自動收)|
+
+**錯誤處理**(對齊 §4.3/§5.5「不靜默截斷、誠實降級」):
+- **來源缺失**(非 git repo / 沒 docs / 空專案)→ 掃描器**優雅降級**:跳過該來源、`sources_present` 標 false、對應陣列空、**不丟例外**,並在 REPORT 註明「跳過 X(找不到)」。
+- **大型 repo** → 照框上限掃,`truncation.*` 標 true,REPORT **明列被截斷了什麼**(不假裝全讀)。
+- **重跑安全**:重跑只覆寫 `.context/.backfill/` 暫存區,**永不自動碰正式檔**;正式 `.context/` 對應檔已有內容 → 先警告、不蓋。
+- **`.context/.backfill/` 不進 commit**:`template/` 需附 `.gitignore`(目前 repo 無任何 `.gitignore`)排除 `.context/.backfill/`,避免 setup.sh `git add -A` 或 PM 後續 commit 誤收暫存草稿。
+
+**測試要求**(§5.5 鐵則「checker 必附測試,否則別生」;蒐證層必測,AI 草擬層是判斷題不做單元測試)。`scan-evidence.test.cjs` 沿 `context-growth` 黑箱子行程 + fixtures 假專案模式,具體案例:
+
+*結構驗證(`fixtures/sample-project/`,來源齊全)*
+1. `module_tree` 抽出預期模組(fixture 有 `src/segmentation/` → evidence 含 `name:"segmentation"` + `file_count`)。
+2. `terms` 含高頻識別字,每筆有 `frequency` + `samples`(file:line 出處)。
+3. `docs` 抽出 README 的 `title` + `first_sentence`。
+4. `external_integrations` 從 `package.json` 推出依賴(fixture 放 `@aws-sdk/client-ses` → evidence 命中)。
+5. `schema_version` / `limits` / `sources_present` / `truncation` 欄位齊全。
+
+*降級驗證(某來源缺失)*
+6. **非 git repo**(`fixtures/no-git-project/` 無 `.git`)→ `sources_present.git=false`、`git_log=[]`、**不丟例外**。
+7. **無 docs**(fixture 無 `docs/` 且無 README)→ `docs=[]`、`sources_present` 標明、不丟例外。
+8. **空專案**(`fixtures/empty-project/` 只有空目錄)→ 證據包結構仍完整、各陣列空、exit 0。
+
+*框上限驗證*
+9. 模組數 > `MODULE_TOP_N` → `module_tree` 長度 = `MODULE_TOP_N`、`truncation.modules_truncated=true`。
+
+*確定性驗證*
+10. 同一 fixture 連跑兩次 → `evidence.json` 位元一致(排序去重、不寫時間戳)。
+
+*錯誤路徑*
+11. `project-root` 不存在 / 不是目錄 → exit 非 0(對齊 `context-growth`)。
+
+> ⚠️ **git fixture 策略待 Generator 定**:fixture 內無法塞巢狀 `.git`。兩條路任選 —— (a) 測試時在 `os.tmpdir()` 起臨時 repo `git init` + 假 commit 餵 git 來源;(b) 把 git 讀取抽成可注入的 provider,測試餵假 log。「非 git repo 降級」案(#6)用無 `.git` 的 fixture 即可,不受此限。
+
+**與既有東西整合:**
+- **`setup.sh`**:沿用既有「目標夾已存在且非空」偵測(step 2 的 `[ -e "$TARGET_ABS" ] && [ -n "$(ls -A ...)" ]`,**copy 前**就判得到)。在那裡設旗標 `BROWNFIELD_DETECTED=y`(更精準可加判 `[ -d "$TARGET_ABS/.git" ]`),在 §7 收尾「下一步」**加一行提醒**:「偵測到像既有專案 → 裝好後在 Claude 跑 `/backfill-context` 草擬 `.context/`」。(shell 跑不了 AI,只能提醒)
+- **`ONBOARDING.md`**:加「**既有專案的開工路徑**」小節,對比現有「Day-0 四步」(全新專案)。大綱:① 一句話「你不是 day-0 空專案,而是把 builder-pm 接到既有 code」→ ② 跑 `/backfill-context` 草擬三份進 `.context/.backfill/` → ③ 逐份審核、改、搬正式 → ④ 之後回到正常 day-N 三迴圈(此時 context-growth 偵測器才不會噪音轟炸)。
+- **`docs/design.md`**:本節(§4.4)即記錄(對齊「只記已拍板」紀律)。
+
+**Done Definition:**
+- **Goal**:既有專案裝好 builder-pm 後跑 `/backfill-context`,能產出三份草稿(SYSTEM/modules/GLOSSARY 候選)+ REPORT 進 `.context/.backfill/`;`scan-evidence.cjs` 有通過的 `scan-evidence.test.cjs`(涵蓋上方案例);`setup.sh` 與 `ONBOARDING.md` 有 brownfield 提醒/路徑;本決定記進 design.md §4.4。
+- **Out of scope**:CONVENTIONS 草擬;`--promote` 自動搬;`/onboard` 指令化;builder-pm 自我 dogfood(拿自己當 brownfield 試跑)。
+
+**未來(本案範圍外):**
+- `--promote` 小幫手(v1 由 PM 手動搬,REPORT 寫清楚怎麼搬)。
+- CONVENTIONS 的 brownfield 草擬(待 v1 驗證價值後再評估)。
+- 把 `/onboard` 也做成真 slash 指令(跟隨本案立下的指令範本)。
+
 ## 5. 硬關卡(共 2 個)— ✅ 鎖定
 
 > 整個包只有「2 個自動攔截」,其餘全是「建議」。攔截=做錯直接擋住,AI 講不過去。
@@ -467,3 +649,4 @@ Day-N(邊做邊長)
 - [ ] drift-fact-check 最小 prototype(`gates/drift-fact-check/`,自帶測試)→「對的自動化長怎樣」範本
 - [ ] (cora 側·非主線)修 README「12 條」A 類 drift:正解是**去重/引用**(README 不報數字、指向 CLAUDE.md),非加偵測腳本
 - [ ] (選用後路)套回 cora 的對照搬家(§6;可用 gap-audit + 全 `.claude/` 掃描當底稿)
+- [ ] **brownfield 導入 `/backfill-context`** → §4.4(2026-06-29 設計鎖定,待實作);**主線**:既有專案冷讀草擬 `.context/` 三份(SYSTEM / modules 清單 / GLOSSARY 候選)+ `template/onboarding/backfill/scan-evidence.cjs` 確定性蒐證層(自帶測試,§5.5 鐵則)+ `setup.sh`/`ONBOARDING.md` brownfield 提醒
