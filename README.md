@@ -36,7 +36,7 @@ bash setup.sh
 ```
 template/    # ★ 會被裝進新專案的全部內容(種子)
   CLAUDE.md          # 一頁核心憲章(10 條 / 4 桶)
-  .claude/agents/    # 四角色合約(Coordinator / Planner / Generator / Evaluator)
+  .claude/agents/    # 4 角色合約(Coordinator / Planner / Generator / Evaluator)
   .claude/skills/    # 三個通用 skill(brainstorming / tdd / code-review)
   SKILLS.md          # 角色 ↔ skill 對照(單一正本)
   .context/          # 專案知識,隨專案長(SYSTEM / GLOSSARY / CONVENTIONS / modules)
