@@ -54,4 +54,4 @@ node scan-evidence.test.cjs
 
 ## 注意：不自動修改正式 `.context/` 檔案
 
-掃描器只**寫入** `<project-root>/.context/.backfill/evidence.json`（暫存區）。草擬後的 `.context/` 正式文件（`SYSTEM.md` / `modules/` / `GLOSSARY.md`）需 PM 審核後**手動搬移**，scanner 和 `/backfill-context` 都永不自動碰正式 `.context/`、永不自動 commit。
+掃描器只**寫入** `<project-root>/.context/.backfill/evidence.json`（暫存區）。草擬後的 `.context/` 正式文件（`SYSTEM.md` / `modules/` / `GLOSSARY.md`）需 PM 審核後**手動搬移**，scanner 和 `/backfill-context` 都永不自動碰正式 `.context/`、永不自動 commit。掃描器同時在 `.context/.backfill/` 內寫一個 `.gitignore`（內容 `*`），確保整個暫存夾被 git 忽略——不依賴專案根 `.gitignore` 或 setup.sh。

@@ -525,7 +525,7 @@ PM 在既有專案裝好 builder-pm → 在 Claude 跑 /backfill-context
 - **來源缺失**(非 git repo / 沒 docs / 空專案)→ 掃描器**優雅降級**:跳過該來源、`sources_present` 標 false、對應陣列空、**不丟例外**,並在 REPORT 註明「跳過 X(找不到)」。
 - **大型 repo** → 照框上限掃,`truncation.*` 標 true,REPORT **明列被截斷了什麼**(不假裝全讀)。
 - **重跑安全**:重跑只覆寫 `.context/.backfill/` 暫存區,**永不自動碰正式檔**;正式 `.context/` 對應檔已有內容 → 先警告、不蓋。
-- **`.context/.backfill/` 不進 commit**:`template/` 需附 `.gitignore`(目前 repo 無任何 `.gitignore`)排除 `.context/.backfill/`,避免 setup.sh `git add -A` 或 PM 後續 commit 誤收暫存草稿。
+- **`.context/.backfill/` 不進 commit**(雙保險):① `template/.gitignore` 排除 `**/.context/.backfill/`(setup.sh 安裝路徑);② **掃描器 `main()` 在 `.context/.backfill/` 內自寫一個 `.gitignore`(內容 `*`)自保** —— 覆蓋「裸 backfill」(未跑 setup.sh、project-root 是另一個既有專案)情境,不依賴專案根 `.gitignore`、不污染使用者既有檔。(2026-06-29 端到端實測 personal-site 發現裸跑時暫存夾無保護 → 修補。)
 
 **測試要求**(§5.5 鐵則「checker 必附測試,否則別生」;蒐證層必測,AI 草擬層是判斷題不做單元測試)。`scan-evidence.test.cjs` 沿 `context-growth` 黑箱子行程 + fixtures 假專案模式,具體案例:
 
@@ -551,6 +551,11 @@ PM 在既有專案裝好 builder-pm → 在 Claude 跑 /backfill-context
 11. `project-root` 不存在 / 不是目錄 → exit 非 0(對齊 `context-growth`)。
 
 > ⚠️ **git fixture 策略待 Generator 定**:fixture 內無法塞巢狀 `.git`。兩條路任選 —— (a) 測試時在 `os.tmpdir()` 起臨時 repo `git init` + 假 commit 餵 git 來源;(b) 把 git 讀取抽成可注入的 provider,測試餵假 log。「非 git repo 降級」案(#6)用無 `.git` 的 fixture 即可,不受此限。
+
+*缺陷修補回歸(2026-06-29 端到端實測 personal-site 後補,測試數 11→14)*
+12. `external_integrations` 命中現代棧:fixture 加 `@supabase/supabase-js`/`posthog-js` → 各命中並標 `inferred_kind`;且**雜訊排除**(`react` 框架不入)。← 原白名單僅 15 條(AWS/Stripe…)漏抓 Supabase/PostHog,擴充至 18 core + 3 optional;app 框架(next/react)刻意不收(PM 拍板,避免稀釋 🟢 高信心欄 + `next` startsWith 誤命中 `next-auth`)。
+13. 掃完後 `<root>/.context/.backfill/.gitignore` 存在且內容嚴格 `*\n`(寫在 `main()`,`scan()` 維持純函式)。
+14. 臨時 `git init` + `git add -A` → `git status --porcelain` 不含 `.context/`(實證暫存草稿不被誤收)。
 
 **與既有東西整合:**
 - **`setup.sh`**:沿用既有「目標夾已存在且非空」偵測(step 2 的 `[ -e "$TARGET_ABS" ] && [ -n "$(ls -A ...)" ]`,**copy 前**就判得到)。在那裡設旗標 `BROWNFIELD_DETECTED=y`(更精準可加判 `[ -d "$TARGET_ABS/.git" ]`),在 §7 收尾「下一步」**加一行提醒**:「偵測到像既有專案 → 裝好後在 Claude 跑 `/backfill-context` 草擬 `.context/`」。(shell 跑不了 AI,只能提醒)
@@ -649,4 +654,4 @@ PM 在既有專案裝好 builder-pm → 在 Claude 跑 /backfill-context
 - [ ] drift-fact-check 最小 prototype(`gates/drift-fact-check/`,自帶測試)→「對的自動化長怎樣」範本
 - [ ] (cora 側·非主線)修 README「12 條」A 類 drift:正解是**去重/引用**(README 不報數字、指向 CLAUDE.md),非加偵測腳本
 - [ ] (選用後路)套回 cora 的對照搬家(§6;可用 gap-audit + 全 `.claude/` 掃描當底稿)
-- [ ] **brownfield 導入 `/backfill-context`** → §4.4(2026-06-29 設計鎖定,待實作);**主線**:既有專案冷讀草擬 `.context/` 三份(SYSTEM / modules 清單 / GLOSSARY 候選)+ `template/onboarding/backfill/scan-evidence.cjs` 確定性蒐證層(自帶測試,§5.5 鐵則)+ `setup.sh`/`ONBOARDING.md` brownfield 提醒
+- [x] **brownfield 導入 `/backfill-context`** → §4.4(2026-06-29 設計鎖定 + 實作 + 端到端實測,PR #3):確定性蒐證層 `scan-evidence.cjs`(自帶測試 §5.5 鐵則)+ 草擬指令 `backfill-context.md` + `setup.sh`/`ONBOARDING.md` brownfield 提醒,走 Planner/Generator/Evaluator 流水線。2026-06-29 拿 `personal-site` 端到端實測:草擬層產出堪用(信心分級正確、資料流誠實標待確認),並揪出 2 個掃描器缺陷(`external_integrations` 白名單漏現代棧 / 暫存夾裸跑無 gitignore 保護)→ 同流水線修補,Evaluator PASS(測試 11→14)

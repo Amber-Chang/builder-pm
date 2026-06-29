@@ -246,3 +246,57 @@ test('11. 不存在路徑 → exit 非 0', () => {
   const { code } = run([path.join(__dirname, 'fixtures', 'this-path-does-not-exist-12345')]);
   assert.notStrictEqual(code, 0, `不存在的路徑應 exit 非 0，實際=${code}`);
 });
+
+// ── 缺陷修正驗收（新增案）─────────────────────────────────────────────────────
+
+test('12（缺陷 1）新整合白名單：含 @supabase/、posthog-js，不含框架 react，仍含 @aws-sdk/client-ses', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'scan-evidence-test-'));
+  try {
+    copyDirSync(FIXTURE_SAMPLE, tmpDir);
+    const { code, evidence } = runAndReadEvidence(tmpDir);
+    assert.strictEqual(code, 0, `scanner 應 exit 0，實際 ${code}`);
+    assert.ok(evidence, 'evidence.json 應存在');
+    const supabase = evidence.external_integrations.find((i) => i.name === '@supabase/supabase-js');
+    assert.ok(supabase, `external_integrations 應含 @supabase/supabase-js，實際=${JSON.stringify(evidence.external_integrations.map((i) => i.name))}`);
+    assert.strictEqual(supabase.inferred_kind, 'backend/Supabase', `inferred_kind 應為 "backend/Supabase"，實際="${supabase.inferred_kind}"`);
+    const posthog = evidence.external_integrations.find((i) => i.name === 'posthog-js');
+    assert.ok(posthog, `external_integrations 應含 posthog-js，實際=${JSON.stringify(evidence.external_integrations.map((i) => i.name))}`);
+    assert.strictEqual(posthog.inferred_kind, 'analytics/PostHog', `inferred_kind 應為 "analytics/PostHog"，實際="${posthog.inferred_kind}"`);
+    const reactEntry = evidence.external_integrations.find((i) => i.name === 'react');
+    assert.strictEqual(reactEntry, undefined, `external_integrations 不應含 react（框架非外部服務）`);
+    const ses = evidence.external_integrations.find((i) => i.name === '@aws-sdk/client-ses');
+    assert.ok(ses, `external_integrations 仍應含 @aws-sdk/client-ses`);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('13（缺陷 2）掃描器在 .context/.backfill/ 內寫出 .gitignore，內容嚴格為 "*\\n"', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'scan-evidence-test-'));
+  try {
+    copyDirSync(FIXTURE_SAMPLE, tmpDir);
+    const { code } = runAndReadEvidence(tmpDir);
+    assert.strictEqual(code, 0, `scanner 應 exit 0，實際 ${code}`);
+    const gitignorePath = path.join(tmpDir, '.context', '.backfill', '.gitignore');
+    assert.ok(fs.existsSync(gitignorePath), `.gitignore 應存在於 .context/.backfill/，實際不存在`);
+    const content = fs.readFileSync(gitignorePath, 'utf8');
+    assert.strictEqual(content, '*\n', `.gitignore 內容應嚴格為 "*\\n"，實際="${content}"`);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('14（缺陷 2 行為驗證）git add -A 後 git status --porcelain 不含 .context/', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'scan-evidence-test-'));
+  try {
+    execFileSync('git', ['-C', tmpDir, 'init', '-q']);
+    copyDirSync(FIXTURE_SAMPLE, tmpDir);
+    const { code } = runAndReadEvidence(tmpDir);
+    assert.strictEqual(code, 0, `scanner 應 exit 0，實際 ${code}`);
+    execFileSync('git', ['-C', tmpDir, 'add', '-A']);
+    const status = execFileSync('git', ['-C', tmpDir, 'status', '--porcelain'], { encoding: 'utf8' });
+    assert.ok(!status.includes('.context/'), `git status --porcelain 不應含 .context/，實際=\n${status}`);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
