@@ -38,3 +38,26 @@
 冷啟動能「薄」,是因為 builder-pm 有三個會自己運轉的迴圈(學習捕捉 / 防膨脹 / drift 守門),它們**就是知識層的成長引擎**。完整設計與業界對標見 `docs/design.md` §4.3。
 
 > 註:目前這份是「流程說明書」。把它變成一支真正的 `/onboard` slash 指令是之後的事;現階段照這份走即可。
+
+## 既有專案的開工路徑（Brownfield）
+
+> 你不是 day-0 空專案，而是把 builder-pm 接到一個**已開發到一半的既有 code base**。
+> §4.3 的「薄起步」前提在這裡破了：`.context/` 是空的，但舊知識全藏在 code 裡。
+
+**四步接入：**
+
+1. **你不是 day-0**——`.context/` 是空的，但既有 code/docs 裡已有知識，直接走 day-N 三迴圈會噪音轟炸（偵測器假設「知識本來就在長」，brownfield 是「從來沒被寫下」）。先補第一層知識。
+
+2. **在 Claude 跑 `/backfill-context`**——指令會自動：
+   - 跑 `onboarding/backfill/scan-evidence.cjs` 掃描 code + docs + git（確定性、框上限）
+   - 讀 `evidence.json` + 抽看關鍵檔，草擬三份草稿（SYSTEM/modules/GLOSSARY 候選）+ 一份 REPORT 進 `.context/.backfill/`：
+     - `SYSTEM.draft.md`（帶信心橫幅 🟢🟡🔴 + 出處）
+     - `modules.draft.md`（模組清單）
+     - `GLOSSARY.candidates.md`（高頻術語候選）
+   - 同時產出 `REPORT.md`（讀了什麼 / 框了多少 / 各份信心 / 怎麼搬正式）
+
+3. **逐份審核 → 改 → 搬正式**——PM 讀每份草稿，確認或修改，再手動複製到正式 `.context/`（`SYSTEM.md` / `modules/` / `GLOSSARY.md`）。草稿在 PM 拍板前**永遠不進正式 `.context/`、永遠不自動 commit**。
+
+4. **回到正常 day-N 三迴圈**——正式 `.context/` 補好後，`context-growth` 偵測器才能正常運作（不再噪音轟炸）。
+
+> 暫存草稿落在 `.context/.backfill/`，已被 `.gitignore` 排除，不會被 `git add -A` 誤收。完整設計見 `docs/design.md §4.4`。

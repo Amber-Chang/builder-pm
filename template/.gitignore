@@ -1,0 +1,6 @@
+# [AI-ASSISTED] by PM Amber (via AI Agent), 2026-06-29
+# 功能：排除 .context/.backfill/ 暫存草稿，避免 setup.sh git add -A 誤收。
+
+# brownfield 蒐證暫存區（/backfill-context 產出的草稿，需 PM 審核後手動搬正式）
+# 用 **/ 前綴：任意深度都排除（含中間 / 的 pattern 只會錨在本檔所在層，蓋不到巢狀路徑）
+**/.context/.backfill/
