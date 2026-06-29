@@ -1,5 +1,5 @@
 <!-- [AI-ASSISTED] by PM Amber (via AI Agent), 2026-06-28 -->
-<!-- 功能：learning-capture 範本說明——捕捉引擎三元件、grounding、為何走 hook、怎麼跑、怎麼接進 Claude Code。 -->
+<!-- 功能：learning-capture 範本說明——捕捉引擎三元件、grounding、為何走 hook（PreCompact + additionalContext）、怎麼跑、怎麼接進 Claude Code。 -->
 
 # learning-capture（學習捕捉引擎 · 種子範本）
 
@@ -17,7 +17,7 @@
 | 元件 | 檔案 | 做什麼 |
 |------|------|--------|
 | **品質閘**（可測核心，runtime 無關） | `check-lesson-quality.cjs` | 給一則草擬教訓，確定性檢查必填欄位 + 摘要長度 + class-level 命名 + 4 反模式 → PASS / REJECT。**這是讓捕捉能長久的關鍵**（沒品質閘 → cora 那種手寫停更 + 爛條堆積）。 |
-| **觸發層**（讓它真的會動） | `capture-nudge.hook.cjs` | 最小 SessionEnd hook——context 消失前把品質閘 checklist + 草擬模板印到 stdout，逼 AI 在 session 結束前回顧「有沒有該記的雷」。 |
+| **觸發層**（讓它真的會動） | `capture-nudge.hook.cjs` | 最小 PreCompact hook——context 壓縮前把品質閘 checklist + 草擬模板透過 `hookSpecificOutput.additionalContext` JSON 注入給模型，逼 AI 趁還有回合回顧「有沒有該記的雷」。**刻意不用 SessionEnd**：那在 session 已終止後才觸發、模型沒有下一回合可反應，且純 stdout 模型看不到（只進 debug log）；唯一會被模型收到的注入管道是 additionalContext。 |
 | **草擬層** | `capture-prompt.md` | 載入式捕捉指令（Hermes review prompt 繁中化）：該記的訊號、🔑 4 反模式、擺放紀律、Memory vs Lesson 分流。 |
 
 ## 為何 builder-pm 觸發走 hook，而非自建 runtime
@@ -59,7 +59,7 @@ strikes: <整數>
 node check-lesson-quality.test.cjs
 ```
 
-零外部依賴（只用 Node 內建 `fs`/`path`/`node:test`/`node:assert`）。測試用真實子行程黑箱驗證品質閘「**該擋會擋、好教訓會過**」（mutation testing 精神，design.md §5.5）：好教訓過、缺欄位 / 摘要過長 / 負面工具斷言 / 環境失敗 / session-artifact 命名各情境 REJECT、已解暫時錯只 WARN 不擋、缺檔 exit 1，外加 hook 空 stdin 不爆且印出 nudge。**治理腳本沒人驗，遲早爛掉沒人發現**——這條鐵則直接焊進範本。
+零外部依賴（只用 Node 內建 `fs`/`path`/`node:test`/`node:assert`）。測試用真實子行程黑箱驗證品質閘「**該擋會擋、好教訓會過**」（mutation testing 精神，design.md §5.5）：好教訓過、缺欄位 / 摘要過長 / 負面工具斷言 / 環境失敗 / session-artifact 命名各情境 REJECT、已解暫時錯只 WARN 不擋、缺檔 exit 1，外加 hook 空 stdin 不爆且輸出合法的 PreCompact additionalContext JSON。**治理腳本沒人驗，遲早爛掉沒人發現**——這條鐵則直接焊進範本。
 
 ## 怎麼把 hook 接進 Claude Code（settings.json）
 
@@ -68,7 +68,7 @@ node check-lesson-quality.test.cjs
 ```json
 {
   "hooks": {
-    "SessionEnd": [
+    "PreCompact": [
       {
         "hooks": [
           {
@@ -82,8 +82,9 @@ node check-lesson-quality.test.cjs
 }
 ```
 
-- `SessionEnd` 在 session 結束前觸發，Claude Code 會把 hook JSON 餵到腳本 stdin（本腳本忽略內容、容錯空 stdin），腳本把 nudge 印到 stdout。
-- 想更早補捉（context 壓縮前）可改掛 `PreCompact`；想每 N 回合提醒可改掛 `Stop` 並自帶計數器（對應 Hermes `nudge_interval`，本範本未實作計數器，留給專案長出來）。
+- `PreCompact` 在 context 壓縮前觸發、**模型此時仍有回合可反應**，Claude Code 會把 hook JSON 餵到腳本 stdin（本腳本忽略內容、容錯空 stdin），腳本把 nudge 包成 `{ "hookSpecificOutput": { "hookEventName": "PreCompact", "additionalContext": "<nudge>" } }` JSON 印到 stdout。
+- **為何不用 `SessionEnd`**：它在 session 已終止後才觸發、模型沒有下一回合可反應；而且 hook 的純 stdout 模型根本看不到（只進 debug log）。模型唯一收得到的注入管道是 `additionalContext`，所以這裡走 PreCompact + JSON。
+- 想每 N 回合提醒可改掛 `Stop` 並自帶計數器（對應 Hermes `nudge_interval`，本範本未實作計數器，留給專案長出來）。
 
 ## 設計連結
 

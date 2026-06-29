@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 // [AI-ASSISTED] by PM Amber (via AI Agent), 2026-06-28
-// 功能：Claude Code SessionEnd hook——context 消失前把捕捉品質閘 checklist + 教訓草擬模板印到
-//        stdout，逼 AI 在 session 結束前回顧「有沒有該記的雷」（觸發層，讓學習捕捉「真的會動」）。
+// 功能：Claude Code PreCompact hook——context 壓縮前把捕捉品質閘 checklist + 教訓草擬模板，透過
+//        hookSpecificOutput.additionalContext JSON 注入給模型（模型仍有回合可反應），逼 AI 在 context
+//        消失前回顧「有沒有該記的雷」（觸發層，讓學習捕捉「真的會動」）。
+// 為何不用 SessionEnd + 純 stdout：SessionEnd 在 session 已終止後才觸發、模型沒有下一回合；且 hook 的純
+//        stdout 模型看不到（只進 debug log）。唯一會被模型收到的注入管道是 additionalContext。
 
 'use strict';
 
@@ -18,7 +21,7 @@ function readStdin() {
 }
 
 const NUDGE = `──────────────────────────────────────────────
-🧠 學習捕捉 nudge（SessionEnd）— context 即將消失，走之前回顧一次
+🧠 學習捕捉 nudge（PreCompact）— context 即將壓縮 / 消失，趁還有回合回顧一次
 ──────────────────────────────────────────────
 「Nothing to save」不該是預設：什麼都沒記 = 錯過學習，不是中性結果。
 
@@ -61,7 +64,14 @@ strikes: 1
 
 function main() {
   readStdin(); // 內容忽略，純為消化 hook 管線輸入、避免阻塞
-  process.stdout.write(NUDGE);
+  // 模型唯一收得到的注入管道是 additionalContext；用 JSON.stringify 確保 NUDGE 內的換行 / 特殊字元正確跳脫
+  const out = {
+    hookSpecificOutput: {
+      hookEventName: 'PreCompact',
+      additionalContext: NUDGE,
+    },
+  };
+  process.stdout.write(JSON.stringify(out));
   return 0;
 }
 
