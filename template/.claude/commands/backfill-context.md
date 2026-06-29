@@ -113,4 +113,4 @@ node ~/.claude/builder-pm/onboarding/backfill/scan-evidence.cjs /path/to/my-proj
 4. 讀 `GLOSSARY.candidates.md`——逐一決定哪些術語要進術語表
 5. 滿意後，手動複製到正式 `.context/`（參考 REPORT.md 的搬移指引）
 
-> 暫存草稿落在 `.context/.backfill/`，已被 `.gitignore` 排除，不會被 `git add -A` 誤收。
+> 暫存草稿落在 `.context/.backfill/`；掃描器會在該夾內放一個 `.gitignore`（內容 `*`），整夾都被 git 忽略，不會被 `git add -A` 誤收——不論專案是否經 setup.sh 安裝、不論專案根 `.gitignore` 有沒有那條規則。

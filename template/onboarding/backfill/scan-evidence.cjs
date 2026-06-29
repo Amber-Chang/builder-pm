@@ -38,6 +38,29 @@ const INTEGRATION_PATTERNS = [
   { pattern: '@prisma/', kind: 'database/Prisma ORM' },
   { pattern: 'redis', kind: 'cache/Redis' },
   { pattern: 'elasticsearch', kind: 'search/Elasticsearch' },
+  // core set: modern SaaS integrations
+  { pattern: '@supabase/', kind: 'backend/Supabase' },
+  { pattern: 'posthog-js', kind: 'analytics/PostHog' },
+  { pattern: 'posthog-node', kind: 'analytics/PostHog' },
+  { pattern: '@clerk/', kind: 'auth/Clerk' },
+  { pattern: 'next-auth', kind: 'auth/NextAuth' },
+  { pattern: '@auth0/', kind: 'auth/Auth0' },
+  { pattern: '@planetscale/database', kind: 'database/PlanetScale' },
+  { pattern: 'drizzle-orm', kind: 'database/Drizzle ORM' },
+  { pattern: '@neondatabase/', kind: 'database/Neon' },
+  { pattern: '@upstash/', kind: 'cache/Upstash' },
+  { pattern: 'mysql2', kind: 'database/MySQL' },
+  { pattern: 'pg', kind: 'database/PostgreSQL' },
+  { pattern: 'mongodb', kind: 'database/MongoDB' },
+  { pattern: 'openai', kind: 'AI/OpenAI' },
+  { pattern: '@anthropic-ai/', kind: 'AI/Anthropic' },
+  { pattern: '@vercel/', kind: 'platform/Vercel' },
+  { pattern: 'resend', kind: 'email/Resend' },
+  { pattern: 'algoliasearch', kind: 'search/Algolia' },
+  // optional set
+  { pattern: '@sentry/', kind: 'observability/Sentry' },
+  { pattern: 'cohere-ai', kind: 'AI/Cohere' },
+  { pattern: 'nodemailer', kind: 'email/SMTP (nodemailer)' },
 ];
 
 // ── 小工具 ──────────────────────────────────────────────────────────────────────
@@ -344,6 +367,7 @@ function main(argv) {
   // 寫出 evidence.json
   const outDir = path.join(projectRoot, '.context', '.backfill');
   fs.mkdirSync(outDir, { recursive: true });
+  fs.writeFileSync(path.join(outDir, '.gitignore'), '*\n', 'utf8');
   const outPath = path.join(outDir, 'evidence.json');
   fs.writeFileSync(outPath, JSON.stringify(evidence, null, 2), 'utf8');
 
