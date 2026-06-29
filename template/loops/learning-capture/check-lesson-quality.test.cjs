@@ -115,7 +115,7 @@ test('缺檔 → exit 1（REJECT 以外唯一非 0 出口）', () => {
   assert.strictEqual(code, 1, `缺檔應 exit 1，實際 ${code}`);
 });
 
-test('8. capture-nudge hook：空 stdin → 印出 nudge（含「絕不記」與草擬模板標頭）、exit 0', () => {
+test('8. capture-nudge hook：空 stdin → 輸出 PreCompact additionalContext JSON（含「絕不記」與草擬模板標頭）、exit 0', () => {
   let code = 0;
   let output = '';
   try {
@@ -125,6 +125,19 @@ test('8. capture-nudge hook：空 stdin → 印出 nudge（含「絕不記」與
     output = (err.stdout || '') + (err.stderr || '');
   }
   assert.strictEqual(code, 0, `hook 應 exit 0，實際 ${code}\n輸出:\n${output}`);
-  assert.match(output, /絕不記/, 'nudge 應含「絕不記」反模式提醒');
-  assert.match(output, /草擬模板/, 'nudge 應含「教訓草擬模板」標頭');
+
+  let json;
+  try {
+    json = JSON.parse(output);
+  } catch (e) {
+    throw new Error(`hook stdout 應為合法 JSON，解析失敗：\n${output}`);
+  }
+  assert.strictEqual(
+    json.hookSpecificOutput.hookEventName,
+    'PreCompact',
+    `hookEventName 應為 PreCompact，實際 ${json.hookSpecificOutput && json.hookSpecificOutput.hookEventName}`
+  );
+  const ctx = json.hookSpecificOutput.additionalContext;
+  assert.match(ctx, /絕不記/, 'additionalContext 應含「絕不記」反模式提醒');
+  assert.match(ctx, /草擬模板/, 'additionalContext 應含「教訓草擬模板」標頭');
 });

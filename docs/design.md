@@ -299,7 +299,7 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 
 | Hermes 用迴圈做的 | builder-pm 用 hook 做 | config 對標 |
 |------|------|------|
-| context 消失前 flush(最重要,最後一次補捉)| **SessionEnd / PreCompact hook** | `flush_min_turns:6` |
+| context 消失前 flush(最重要,最後一次補捉)| **PreCompact hook**(SessionEnd 不行:session 已終止、模型無回合,純 stdout 只進 log 收不到)| `flush_min_turns:6` |
 | 每 N 回合 nudge「考慮存」 | **Stop hook + 自存計數器** | `nudge_interval:10` |
 | 複雜任務後存 skill | Stop hook + 條件 | `creation_nudge_interval:15` |
 | 當場 AI 紀律(PM 一糾正就草擬)+ `/lesson` 顯式後門 | charter 紀律 + slash 指令 | — |
@@ -317,7 +317,7 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 
 **種子實作**:`loops/learning-capture/` —
 - **品質閘 linter(可測核心,runtime 無關)**:給一則草擬教訓,確定性檢查 §4 HARDLINE 必填欄位 + 擋上面 4 種反模式 + 擋 session-artifact 命名 → PASS/REJECT。**這是讓捕捉能長久的關鍵**(沒品質閘 → cora 那種手寫停更 + 爛條堆積)。
-- **觸發 hook(讓它真的會動)**:最小 SessionEnd nudge hook —— context 消失前印出品質閘 checklist + 草擬模板,逼 AI 在 session 結束前補捉。
+- **觸發 hook(讓它真的會動)**:最小 PreCompact nudge hook —— context 壓縮前,用 `hookSpecificOutput.additionalContext` JSON 把品質閘 checklist + 草擬模板**注入給模型**(官方唯一會讓模型收到 hook 輸出的管道),逼 AI 在 context 消失前補捉。**踩雷修正(2026-06-29,查 Claude Code 官方文件)**:原型曾用 `SessionEnd` + 純 stdout —— 但 SessionEnd 在 session 已終止時觸發、模型無下一回合,純 stdout 又只進 debug log 模型看不到 → nudge 等於印給空氣;已改 PreCompact + additionalContext。**這條本身就是「寫了機制 ≠ 它會動」的活案例。**
 - **草擬 prompt**:載入式 capture 指令,內嵌上面整段品質閘(Hermes review prompt 繁中化)。
 
 **不做**:RAG、SQLite/向量庫(過度工程;規模不到。要 filter 用 frontmatter,要 session 搜尋未來用 FTS5 關鍵字,與 LESSONS 分離)。
