@@ -3,6 +3,8 @@
 
 # design.md 盲區盤點報告
 
+> 📍 狀態:歷史盤點底稿(2026-06-27)。結論已併入 `design.md`(正本);部分判斷已被 `inventory-deep.md` 修正(如 error-patterns「死碼」誤判)。看現況請以 `design.md` 為準。
+
 > 來源:`governance-gap-audit` workflow(2026-06-27)。5 盤點(`.context`/`.codex`/`scripts`/`CLAUDE.md`/`.claude`)→ 5 對照 design.md → 1 critic 去重驗證。
 > 39 raw gap → critic 確認 **28** + 駁回 1 + 4 missing categories + 4 top risks。
 > **triage 欄待 PM 拍板**:`加回核心/模組` / `標 known-divergence(刻意簡化、接受損失)` / `當專案 config`。
