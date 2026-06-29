@@ -21,7 +21,7 @@ node onboarding/backfill/scan-evidence.cjs /path/to/my-project
 node scan-evidence.test.cjs
 ```
 
-零外部依賴（只用 Node 內建 `fs` / `path` / `node:test` / `node:assert`）。11 個測試涵蓋：結構驗證 × 5、降級驗證 × 3、框上限 × 1、確定性 × 1、錯誤路徑 × 1。
+零外部依賴（只用 Node 內建 `fs` / `path` / `node:test` / `node:assert`）。14 個測試涵蓋：結構驗證 × 5、降級驗證 × 3、框上限 × 1、確定性 × 1、錯誤路徑 × 1、缺陷修補回歸 × 3。
 
 ## evidence.json 格式
 
