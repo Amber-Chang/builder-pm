@@ -3,8 +3,8 @@
 > 狀態:🚧 進行中 checkpoint ｜ 更新:2026-06-28 ｜ 正本在 builder-pm repo(唯一正本;原 cora-governance-notes 副本 2026-06-28 起停止同步 — 同一事實兩處會 drift,見 §5.5)
 > 由 brainstorming 對話累積;本檔只記「已拍板」與「待辦」,不重述討論過程。
 > 2026-06-27 新增 §2.5 Harness 角色分層(基於 PM 手繪心智圖 + 全 `.claude/` 掃描)。
-> 2026-06-27 重心校正:forward 種新專案為主線(非回套 cora);新增 §1.5 種子骨架;盲區報告 `docs/gap-audit.md`。
-> 2026-06-28 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `docs/inventory-deep.md`;本檔套入 6 條修正(模組⑥跨樹依賴 / OpenSpec 雙軌 / 雙語+去硬編+未啟用≠死碼 / error-patterns 修正 / fail-closed 閘+機密衛生 / 派工貼引文+model 分層)。
+> 2026-06-27 重心校正:forward 種新專案為主線(非回套 cora);新增 §1.5 種子骨架;盲區報告 `docs/archive/gap-audit.md`。
+> 2026-06-28 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `docs/archive/inventory-deep.md`;本檔套入 6 條修正(模組⑥跨樹依賴 / OpenSpec 雙軌 / 雙語+去硬編+未啟用≠死碼 / error-patterns 修正 / fail-closed 閘+機密衛生 / 派工貼引文+model 分層)。
 > 2026-06-28 新增 §5.5 Drift 守門 + `gates/drift-fact-check` 範本;翻 cora 出生史確認 **amber-stack = builder-pm v1**,v2 定位 = v1 種子 + 三個自我維持迴圈(防膨脹/學習/drift),見 §1。
 > 2026-06-28 新增 §4.1 防膨脹(規則降級)迴圈 + `loops/anti-bloat/` 範本(grounding:Hermes `Curator` OSS + cora 自身鐘擺 telemetry;雙背書)。
 > 2026-06-28 新增 §4.2 學習捕捉引擎 + `loops/learning-capture/` 範本(grounding:Hermes `background_review` 自動捕捉);**自我修正**舊筆記「Hermes 沒自動 nudge=行銷話術」之誤(Rule #12)。§1 北極星 PM 角色校準=治理包非 runtime。三迴圈設計全鎖定。
@@ -29,7 +29,7 @@
 - **範圍**(已定):先萃取**通用種子骨架**;**「套回 cora」降為選用後路**(非主線)。
 - **深度**(已定):**文件為主 + 極少硬關卡**(核心永遠 2 個;模組可各帶專屬硬關卡 — 見 gap-audit B2)。
 - **方案**(已定):**B = 一頁核心 + 選用模組**,複雜度由「開幾個模組」決定。
-- **盲區報告**:`docs/gap-audit.md`(28 個確認盲區);triage 尺從「加回/divergence/config」改為「**種子(day1 必備)vs 該隨專案長出來**」。
+- **盲區報告**:`docs/archive/gap-audit.md`(28 個確認盲區);triage 尺從「加回/divergence/config」改為「**種子(day1 必備)vs 該隨專案長出來**」。
 
 ## 1.5 種子骨架:新專案 day1 的最小穩定骨架 — ✅ 鎖定(2026-06-27)
 
@@ -60,7 +60,7 @@
 - 捕捉引擎要真的會動 —— **§4「半自動 hook 捕捉」cora 其實沒有** → ✅ 設計鎖定 §4.2 + 🚧 prototype `loops/learning-capture/`(grounded Hermes `background_review`,觸發走 Claude Code hook 非自建 runtime)
 - 跨專案版本治理(可重用包必備:核心/模組更新怎麼傳到 N 個已裝專案)
 
-> 完整 28 盲區 + triage 見 `docs/gap-audit.md`。
+> 完整 28 盲區 + triage 見 `docs/archive/gap-audit.md`。
 
 ## 1.6 更新模型:開工模板,非自動更新套件 — ✅ 鎖定(2026-06-28,PM 拍板「刻意不做跨專案推送」)
 
@@ -641,8 +641,8 @@ PM 在既有專案裝好 builder-pm → 在 Claude 跑 /backfill-context
 - [x] 在 GitHub 開新 repo(builder-pm),把這個包做成真的可重用專案(← PM 2026-06-26 決定)
 - [x] Harness 角色分層定案 → §2.5(← PM 手繪圖 2026-06-27)
 - [x] 重心校正 forward-first + 新增 §1.5 種子骨架(← PM 2026-06-27)
-- [x] 全治理盤點 → 28 盲區報告 `docs/gap-audit.md`
-- [x] 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `docs/inventory-deep.md`;套入 6 條修正(2026-06-28)
+- [x] 全治理盤點 → 28 盲區報告 `docs/archive/gap-audit.md`
+- [x] 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `docs/archive/inventory-deep.md`;套入 6 條修正(2026-06-28)
 - [x] **種子缺陷 4 修全結案**(2026-06-28):~~#1 學習迴圈補降級~~ ✅ §4.1 `loops/anti-bloat/` / ~~#2 冷啟動~~ ✅ §4.3 + `loops/context-growth/`(f8376f0,codex 審無 BLOCK)/ ~~#3 捕捉引擎~~ ✅ §4.2 `loops/learning-capture/` / ~~#4 跨專案版本治理~~ ✅ §1.6 **決定刻意不做**(scaffold 非 live dependency,記錄理由)
 - [x] 冷啟動 `.md` 收尾(2026-06-28):`onboarding/context-templates/`(SYSTEM/GLOSSARY/CONVENTIONS/modules 四份空骨架)+ `onboarding/ONBOARDING.md` 開工流程文件 → **§4.3 種子實作全到位**
 - [x] 把種子骨架寫成實體檔 + 4 角色空白員工合約 + `setup.sh` 安裝器(§1.7 架構鎖定)— **完成** 2026-06-29:薄核心 9 檔 + 51 rename 進 `template/`;`setup.sh` 三道把關過(codex 審 3 finding 修畢、M1 symlink 種子防護用變異測試殺死);builder-pm 已 push 上 GitHub
