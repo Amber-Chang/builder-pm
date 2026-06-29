@@ -3,6 +3,8 @@
 
 # cora 全治理表面 · 逐檔深讀盤點
 
+> 📍 狀態：歷史盤點底稿（2026-06-28，取代 gap-audit 片段盤點）。結論已併入 `design.md`（正本）。看現況請以 `design.md` 為準。
+
 > 來源：`governance-deep-inventory` workflow（2026-06-28）。**12 agent · 707634 token · 116 檔逐檔全文深讀**（非片段摘要）。
 > 與 `gap-audit.md` 的差別：上一輪是 Explore agent 抓片段 + critic 推論，漏了 `.codex/review-agent` 整套子系統、把 error-patterns.json 誤判死碼。這輪強制全文讀可執行腳本 + 跨樹依賴 + 停用機制辨識。
 

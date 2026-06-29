@@ -1,0 +1,36 @@
+{
+  "_note": "builder-pm 對自己跑的字面事實清單（單一真相來源）。路徑相對本檔（repo 根）。跑法：node template/gates/drift-fact-check/check-drift-fact.cjs drift-facts.json",
+  "facts": [
+    {
+      "id": "charter-rule-count",
+      "description": "核心憲章規則數 = 10 條",
+      "value": 10,
+      "pattern": "核心憲章[^\\n]*?(\\d+)\\s*條",
+      "files": [
+        "README.md",
+        "docs/design.md",
+        "template/CLAUDE.md"
+      ]
+    },
+    {
+      "id": "hard-gate-count",
+      "description": "硬關卡 / 自動攔截數 = 2 個",
+      "value": 2,
+      "pattern": "(\\d+)\\s*個(?:自動攔截|硬關卡)",
+      "files": [
+        "README.md",
+        "docs/design.md"
+      ]
+    },
+    {
+      "id": "role-count",
+      "description": "交付線角色數 = 4（已統一為阿拉伯數字，迴圈數因全為中文且未漂移故不納入）",
+      "value": 4,
+      "pattern": "(\\d+)\\s*個?角色",
+      "files": [
+        "README.md",
+        "docs/design.md"
+      ]
+    }
+  ]
+}
