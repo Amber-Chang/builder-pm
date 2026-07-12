@@ -29,3 +29,22 @@ test('既有 Claude Code 核心檔案位元不變', () => {
     assert.equal(sha256(file), expected, `${file} 的 SHA-256 與 Claude 相容性基準不符`);
   }
 });
+
+const CODEX_SKILLS = ['coordinator', 'planner', 'generator', 'evaluator'];
+
+test('Codex 入口存在且引用共用正本，不複製核心條文', () => {
+  const agents = fs.readFileSync(path.join(ROOT, 'template/AGENTS.md'), 'utf8');
+  assert.match(agents, /CLAUDE\.md/);
+  assert.match(agents, /\.agents\/skills\/coordinator/);
+  assert.doesNotMatch(agents, /核心憲章（10 條/);
+});
+
+test('Codex 四角色 skills 有合法 frontmatter 與角色觸發', () => {
+  for (const role of CODEX_SKILLS) {
+    const file = path.join(ROOT, 'template/.agents/skills', role, 'SKILL.md');
+    const body = fs.readFileSync(file, 'utf8');
+    assert.match(body, /^---\nname: /);
+    assert.match(body, /description: /);
+    assert.match(body, new RegExp(role, 'i'));
+  }
+});
