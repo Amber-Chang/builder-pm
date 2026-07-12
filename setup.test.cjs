@@ -19,6 +19,7 @@ const CLAUDE_BASELINE = new Map([
   ['template/.claude/skills/brainstorming/SKILL.md', 'eecf19a0cd1b2f15e2d2695ca6890e0e33dc8f13e9fa6ea1a0a02162747cab41'],
   ['template/.claude/skills/code-review/SKILL.md', '681db8f08effad6a7d0d7c20548502fb1940c1df4b61648b790a79a485d6de3a'],
   ['template/.claude/skills/tdd/SKILL.md', '9108edbd1b6c2e9d99ff31b3b05f2acb6543bc32977f56279ba22418e6bb1f90'],
+  ['template/.claude/commands/backfill-context.md', 'a53e9c3afa7e89bd947ec455f562dbf842b659ca6b84fd5930d9adcfa7af1922'],
 ]);
 
 function sha256(file) {
@@ -44,7 +45,7 @@ function markdownSection(contents, heading) {
   return match[1];
 }
 
-test('既有 Claude Code 核心檔案位元不變', () => {
+test('受保護的既有 Claude Code 檔案位元不變', () => {
   for (const [file, expected] of CLAUDE_BASELINE) {
     assert.equal(sha256(file), expected, `${file} 的 SHA-256 與 Claude 相容性基準不符`);
   }
@@ -129,7 +130,7 @@ test('Coordinator adapter 只保留 Codex Evaluator 交接', () => {
   );
 });
 
-function runSetup(platform, { codexReview = 'n', prepopulateTarget } = {}) {
+function runSetup(platform, { codexReview = 'n', prepopulateTarget, brownfield = false } = {}) {
   const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'builder-pm-setup-'));
   const source = path.join(sandbox, 'source');
   const target = path.join(sandbox, 'target');
@@ -150,8 +151,12 @@ function runSetup(platform, { codexReview = 'n', prepopulateTarget } = {}) {
     '',
     '',
   ];
-  if (prepopulateTarget) {
-    prepopulateTarget(target);
+  if (prepopulateTarget || brownfield) {
+    if (prepopulateTarget) prepopulateTarget(target);
+    if (brownfield) {
+      fs.mkdirSync(path.join(target, '.git'), { recursive: true });
+      fs.writeFileSync(path.join(target, '.git', 'HEAD'), 'ref: refs/heads/main\n');
+    }
     answers.push('y');
   }
   answers.push('n');
@@ -183,6 +188,14 @@ function assertReviewConfig(target) {
   }
 }
 
+function assertCodexCliContract(modules) {
+  assert.match(modules, /codex plugin marketplace add Amber-Chang\/codex-pr-review/);
+  assert.match(modules, /enable|啟用/i);
+  assert.match(modules, /reload/i);
+  assert.match(modules, /pr-review-agent/);
+  assert.doesNotMatch(modules, /codex plugin install/);
+}
+
 test('Claude 預設安裝保留原入口且不安裝 Codex 入口', () => {
   const run = runSetup('', { codexReview: 'n' });
   try {
@@ -197,6 +210,23 @@ test('Claude 預設安裝保留原入口且不安裝 Codex 入口', () => {
   }
 });
 
+test('Claude 啟用 Codex review 時建立設定與提供 plugin 安裝指引', () => {
+  const run = runSetup('', { codexReview: 'y' });
+  try {
+    assert.equal(run.status, 0, run.stderr);
+    assertReviewConfig(run.target);
+    const modules = fs.readFileSync(path.join(run.target, 'MODULES.md'), 'utf8');
+    assert.match(modules, /\/plugin marketplace add Amber-Chang\/codex-pr-review/);
+    assert.match(modules, /\/plugin install codex-pr-review@codex-pr-review/);
+    assert.match(modules, /private repo/i);
+    assert.match(modules, /fallback/i);
+    assert.equal(fs.existsSync(path.join(run.target, 'AGENTS.md')), false);
+    assert.equal(fs.existsSync(path.join(run.target, '.agents')), false);
+  } finally {
+    run.cleanup();
+  }
+});
+
 test('Codex 安裝保留共用 Claude 合約並建立 Codex 入口與 review config', () => {
   const run = runSetup('2');
   try {
@@ -206,7 +236,9 @@ test('Codex 安裝保留共用 Claude 合約並建立 Codex 入口與 review con
     assert.equal(fs.existsSync(path.join(run.target, 'AGENTS.md')), true);
     assert.equal(fs.existsSync(path.join(run.target, '.agents/skills/evaluator/SKILL.md')), true);
     assertReviewConfig(run.target);
-    assert.match(fs.readFileSync(path.join(run.target, 'MODULES.md'), 'utf8'), /PR REVIEW.*待啟用/i);
+    const modules = fs.readFileSync(path.join(run.target, 'MODULES.md'), 'utf8');
+    assert.match(modules, /PR REVIEW.*待啟用/i);
+    assertCodexCliContract(modules);
   } finally {
     run.cleanup();
   }
@@ -221,6 +253,7 @@ test('雙平台安裝同時保留兩邊入口', () => {
     assert.equal(fs.existsSync(path.join(run.target, 'AGENTS.md')), true);
     assert.equal(fs.existsSync(path.join(run.target, '.agents')), true);
     assertReviewConfig(run.target);
+    assertCodexCliContract(fs.readFileSync(path.join(run.target, 'MODULES.md'), 'utf8'));
   } finally {
     run.cleanup();
   }
@@ -261,6 +294,36 @@ test('Claude 安裝到既有專案時保留原有 Codex 命名檔案', () => {
     assert.equal(fs.existsSync(path.join(run.target, '.claude/agents/coordinator.md')), true);
   } finally {
     run.cleanup();
+  }
+});
+
+test('brownfield 三平台輸出各自可執行的 backfill 路徑', () => {
+  const cases = [
+    { platform: '', expected: /在 Claude 執行 \/backfill-context/ },
+    { platform: '2', expected: /請 Codex 依照 \.claude\/commands\/backfill-context\.md 草擬/ },
+    {
+      platform: '3',
+      expected: /可在 Claude 執行 \/backfill-context，或請 Codex 依照 \.claude\/commands\/backfill-context\.md 執行/,
+    },
+  ];
+
+  for (const { platform, expected } of cases) {
+    const run = runSetup(platform, {
+      brownfield: true,
+      prepopulateTarget: (target) => {
+        fs.mkdirSync(target, { recursive: true });
+        fs.writeFileSync(path.join(target, 'existing.txt'), 'brownfield\n');
+      },
+    });
+    try {
+      assert.equal(run.status, 0, run.stderr);
+      assert.match(run.stdout, expected);
+      if (platform === '2') {
+        assert.doesNotMatch(run.stdout, /在 Claude 執行 \/backfill-context/);
+      }
+    } finally {
+      run.cleanup();
+    }
   }
 });
 
