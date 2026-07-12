@@ -76,7 +76,7 @@ builder-pm **不是從零發明**。cora 是 2026-03 從模板 **`amber-stack`**
 - **Drift 守門原則**(§8):文件 DRY(同一事實只寫一處)> 偵測;任何 drift checker 必附測試否則不准進包
 
 **🌳 該長出來(不 ship,隨專案長):**
-- 多模型 / `.codex` 第二治理樹(加第二個模型家族才需要)⚠️ 但**不是純可選**:模組⑥(PR 防呆)對 `.codex/review-agent/lib/github.cjs` 有 live `require` 依賴 → 要帶 ⑥ 就得內聯該 helper 或連帶拉進這支 lib,不能「砍 .codex + 留 ⑥」並存(見 §5 註)
+- 完整的多模型 / `.codex` 第二治理樹（review-agent 程式、知識庫、校準資料）不隨種子 ship,有需要才長；但這不包含最小 `.codex/review-config.json`。選 Codex / 雙平台,或 Claude-only 啟用 Codex review 時,安裝器會 ship 該設定檔,提供 `pr-review-agent` 所需知識來源路由。
 - 契約一致性 gate / codegen drift(有規格契約才需要)
 - 跨模型 reviewer 的 false-positive 校準 / Rescue 例外(有第二模型才需要)
 - drift 容忍中間層、real-path UAT、Engineer-led 輕量路徑、併發鎖定 / worktree、branch hygiene 三段式
@@ -87,7 +87,7 @@ builder-pm **不是從零發明**。cora 是 2026-03 從模板 **`amber-stack`**
 
 ## 2. 安裝與更新架構 — ✅ 鎖定(2026-06-28,PM 逐步拍板)
 
-> 里程碑:把 builder-pm 從「設計稿 + 散裝範本」變成**真能一鍵安裝的包**(`setup.sh` 問答 → 填 `{{placeholder}}` → 砍用不到 → `git init`)。v2 把「會裝進新專案的東西」圈進 `template/`,界線比 v1 乾淨(v1 設計稿與種子混在 repo 根、靠 setup.sh 手動砍)。
+> 里程碑:把 builder-pm 從「設計稿 + 散裝範本」變成**引導式安裝包**(`setup.sh` 問答 → 填 `{{placeholder}}` → 砍用不到 → `git init`)。v2 把「會裝進新專案的東西」圈進 `template/`,界線比 v1 乾淨(v1 設計稿與種子混在 repo 根、靠 setup.sh 手動砍)。外部 plugin 仍需使用者啟用 / reload 並驗證 skill,不屬於自動安裝完成範圍。
 
 ### 2.0 雙 runtime adapter 決策 — ✅ 已實作(2026-07-13)
 
@@ -104,20 +104,20 @@ builder-pm 混了兩種「散佈方式天生不同」的內容 ——
 | 類型 | 例子 | 天生散佈方式 |
 |------|------|------------|
 | **① 鷹架**(複製一次、專案自己擁有、會改)| 核心憲章 · 4 角色合約 · `.context` 模板 · loops/gates 紀律 | 留在 seed / `setup.sh`(copy-once)|
-| **② 工具**(要版本控管、會更新、多專案共用)| `review-agent` · openspec · skill 包 | **變 plugin**(install + 版本 + 更新)|
+| **② 工具**(要版本控管、會更新、多專案共用)| `review-agent` · openspec · skill 包 | **已以 plugin 發布**(版本化 + 更新)|
 
-### 2.2 薄核心 + opt-in 模組(走 plugin 介面)
+### 2.2 薄核心 + 依平台啟用模組(走 plugin 介面)
 
-**薄核心(always-on,每個新專案都有)**:`CLAUDE.md`(§3 憲章)· `.claude/agents/{coordinator,planner,generator,evaluator}.md`(空白員工合約)· `SKILLS.md` + 3 通用 skill(§4.6)· `.context/` 四空模板 · `loops/`+`gates/` · `ONBOARDING.md` · `setup.sh`。
+**薄核心(always-on,每個新專案都有)**:`CLAUDE.md`(§3 憲章)· `.claude/agents/{coordinator,planner,generator,evaluator}.md`(空白員工合約)· `SKILLS.md` + 3 通用 skill(§4.6)· `.context/` 四空模板 · `loops/`+`gates/` · `ONBOARDING.md` · `setup.sh`。選 Codex / 雙平台,或 Claude-only 啟用 Codex review 時,另 ship 最小 `.codex/review-config.json`;它是 plugin 知識路由設定,不是完整第二治理樹。
 
-**opt-in 模組(`setup.sh` 問「要不要裝」)**:
+**依平台處理的模組**:
 - **openspec** → Generator 的 SDD 流程(§4.6);選了才跑 `openspec init` 生最新 skill,標明需先裝 CLI。
-- **Codex 雙模型審查** → `review-agent` + `pr-review-agent` skill 接成 Evaluator 第二模型;沒裝時 Evaluator 用單模型獨立審(鐵律「寫的≠驗的」仍在)。
+- **Codex PR 審查** → Claude-only 可選擇 `codex-pr-review` 作第二模型；Codex / 雙平台的正式 PR gate 必須使用其 `pr-review-agent`。只有 Claude-only 未啟用 plugin 時可維持單模型獨立審；Codex / 雙平台若 plugin、PR、授權或知識來源不可用,正式狀態只能是 `PR REVIEW BLOCKED`,不得靜默降級為單模型 PASS。
 
-**關鍵設計:opt-in 模組設成「裝 plugin」介面,不把 ② 類工具搬進 `template/`**。理由:② 是重型 + 會更新,vendor 進種子 = 過期 + 養肥(撞 §6.3 anti-bloat)。
+**關鍵設計:外部工具走 plugin 介面,不把 ② 類工具搬進 `template/`**。理由:② 是重型 + 會更新,vendor 進種子 = 過期 + 養肥(撞 §6.3 anti-bloat)。
 - `review-agent` 已驗證**自給自足**(只用 Node 內建 + 內部 require、52K、無外部套件無硬編 key)→ 天生 plugin 形狀 → 已抽成獨立 repo + plugin(見 §10)。
-- **Codex 做得成 plugin**(查證:superpowers plugin 同時帶 `.claude-plugin/` + `.codex-plugin/` + `hooks-codex.json` 多介面 adapter)→ 不必每專案手抄 `.codex/skills`。
-- 過渡期 `setup.sh` 模組選項暫指向 cora 既有並標明;介面 forward-compatible,plugin 落地後把「copy 檔」換成「install plugin」即可,核心不動。
+- `codex-pr-review` repo 已同時具備 `.claude-plugin/` 與 `.codex-plugin/` manifest,不必每專案手抄 review skill；`setup.sh` 依平台提供啟用指引,但不宣稱自動啟用。
+- CLI 相容性邊界：目前可用 `codex plugin marketplace add`,但 `codex plugin install` 並非所有版本皆提供。marketplace add 只加入來源,不代表 plugin 已可用；使用者仍須 enable / reload 並驗證 `pr-review-agent`。
 
 ### 2.3 更新模型:開工模板,非自動更新套件(PM 拍板「刻意不做跨專案推送」)
 
@@ -486,7 +486,7 @@ template/
 - 兩個都做成「每次存檔必跑的客戶端檢查」;CI 版當選用加強(各家 CI 不同,不強綁)。
 - ① 比對「要收進去的檔名」是否命中可設定的 AI 產物清單(刪除放行);沿用 cora `no-claude-telemetry-leak` 模式。
 - ② 偵測有無程式碼改動 + commit 訊息有無簽核字樣;沿用 cora `pre-commit-codex-check` 模式,把「codex」抽象成「evaluator」。跳關沿用(純文件/翻譯/rename / PM 明文 override / 工程師自負+留紀錄)。
-- 安裝:包附「一鍵設定」,丟進新專案就自動開啟,不用手接線。
+- 安裝:核心 hooks 由 `setup.sh` 在專案內接線；外部 plugin 不納入「自動開啟」承諾,仍須依平台指引啟用 / reload 與驗證對應 skill。
 
 **補(2026-06-28 deep-inventory):**
 - **第三類「人工 fail-closed 啟用閘」(grow,非自動關卡)**:cora 對資安敏感功能(SES 憑證 / SSRF / Git push)採「code 已 merge 但需真人資安工程師簽核才准**啟用**」紀律(合入 ≠ 上線)。這是不靠 code、純靠 PM/工程紀律的安全邊界;種子保留此 **pattern**,gate 內容隨專案長。
@@ -552,7 +552,7 @@ template/
 - [x] 冷啟動 `.md` 收尾(2026-06-28):`onboarding/context-templates/` 四份空骨架 + `onboarding/ONBOARDING.md` → §6.4 種子實作全到位
 - [x] 把種子骨架寫成實體檔 + 4 角色空白員工合約 + `setup.sh` 安裝器(§2 架構鎖定)— **完成** 2026-06-29:薄核心 9 檔 + 51 rename 進 `template/`;`setup.sh` 三道把關過;builder-pm 已 push 上 GitHub
 - [x] 洞 2:「SDD+TDD 紀律」與「openspec 工具」分兩層 → §4.6(2026-06-28)
-- [x] **review-agent 抽成獨立 repo + plugin**(2026-06-29):`Amber-Chang/codex-pr-review`(private)+ `.claude-plugin/` manifest → Claude Code 一鍵裝;`setup.sh` Codex 模組已接此一鍵流程
+- [x] **review-agent 抽成獨立 repo + plugin**(2026-06-29 當時紀錄；啟用方式已由 2026-07-13 決策取代):`Amber-Chang/codex-pr-review`(private)已有 `.claude-plugin/` 與 `.codex-plugin/` manifest；現況是 `setup.sh` 提供平台別引導,使用者仍須啟用 / reload 並驗證 `pr-review-agent`,不是自動「一鍵裝好」。
 - [x] (收尾)cora-governance-notes 舊設計副本 2026-06-29 換成指回 builder-pm 正本的指標(避免讀到舊版;同一事實兩處會 drift,見 §8)
 - [x] Drift 守門原則定案 → §8(三類 × 解法階層 + checker 必附測試鐵則)(2026-06-28)
 - [x] **brownfield 導入 `/backfill-context`** → §6.5(2026-06-29,PR #3):確定性蒐證層 `scan-evidence.cjs`(自帶測試)+ 草擬指令 `backfill-context.md` + `setup.sh`/`ONBOARDING.md` brownfield 提醒。拿 `personal-site` 端到端實測:草擬層堪用、揪出 2 個掃描器缺陷(白名單漏現代棧 / 暫存夾裸跑無 gitignore)→ 同流水線修補,Evaluator PASS(測試 11→14)
@@ -577,7 +577,7 @@ template/
 - **2026-06-28** — 新增學習捕捉引擎(現 §6.2)+ `loops/learning-capture/` 範本;**自我修正**舊筆記「Hermes 沒自動 nudge=行銷話術」之誤。北極星 PM 角色校準=治理包非 runtime。三迴圈設計全鎖定。
 - **2026-06-28** — 新增冷啟動 onboarding + 知識層成長偵測(現 §6.4);grounding v1 `setup.sh` + cora `.context/` 真實成長史 + 三迴圈當成長引擎。修 v1「day-0 叫 PM 填 SYSTEM」早問 bug。prototype `loops/context-growth/`(commit f8376f0,codex 審無 BLOCK)。
 - **2026-06-28** — 新增更新模型(現 §2.3,PM 拍板「刻意不做跨專案推送」);**四個種子缺陷至此全結案**。
-- **2026-06-28** — 新增安裝架構(現 §2,薄核心 + opt-in 模組走 plugin 介面)+ skill 路由層(現 §4.6);PM 逐步拍板 4 角色全套 / `SKILLS.md` 單一正本 + 3 通用 skill 預接 / openspec+Codex 審查走 opt-in 且設計成「裝 plugin」介面 / review-agent 抽獨立 plugin = seed 後下一里程碑 / openspec 歸 Generator 做 SDD。
+- **2026-06-28（歷史狀態,已由 2026-07-13 雙 runtime 決策取代）** — 新增安裝架構(薄核心 + 當時規劃的 opt-in 模組走 plugin 介面)+ skill 路由層(現 §4.6);當時將 openspec+Codex 審查都視為 opt-in,並把 review-agent 抽獨立 plugin 列為下一里程碑。現況改為 Claude-only 的 Codex review 選用、Codex / 雙平台正式 PR gate 必要。
 - **2026-06-29** — brownfield 導入 `/backfill-context`(現 §6.5)設計鎖定 + 實作 + 端到端實測(PR #3);review-agent 抽成獨立 repo + plugin。
 - **正本遷移** — 原 `cora-governance-notes` 副本 2026-06-28 起停止同步(同一事實兩處會 drift,見 §8),2026-06-29 換成指回 builder-pm 正本的指標。
 

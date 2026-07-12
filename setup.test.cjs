@@ -261,6 +261,18 @@ test('使用者文件完整說明 Claude Code 與 Codex 雙執行環境', () => 
   const skills = fs.readFileSync(path.join(ROOT, 'template/SKILLS.md'), 'utf8');
 
   assert.match(readme, /Claude Code.*Codex|Codex.*Claude Code/s);
+  assert.match(readme, /AGENTS\.md/);
+  assert.match(readme, /CLAUDE\.md/);
+  assert.match(readme, /AGENTS\.md[\s\S]*(?:轉接|adapter|引用|沿用)[\s\S]*CLAUDE\.md|CLAUDE\.md[\s\S]*(?:共用|共享|正本)[\s\S]*AGENTS\.md/i);
+  assert.match(readme, /\.agents\/skills/);
+  assert.match(readme, /LOCAL PASS/);
+  assert.match(readme, /PR PASS/);
+  assert.match(readme, /PR REVIEW BLOCKED/);
+  assert.match(readme, /pr-review-agent/);
+  assert.match(
+    readme,
+    /(?=.*\.claude)(?=.*(?:保留|沿用))(?=.*(?:共用|共享).*(?:合約|契約))(?=.*(?:不是|非).*(?:runtime|執行入口))/is,
+  );
   assert.match(onboarding, /LOCAL PASS/);
   assert.match(onboarding, /PR REVIEW BLOCKED/);
   assert.match(skills, /\.agents\/skills/);
