@@ -4,7 +4,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 
 const ROOT = __dirname;
 
@@ -116,4 +118,139 @@ test('Coordinator adapter 只保留 Codex Evaluator 交接', () => {
     coordinatorBody,
     /不清楚的需求|模糊需求|production code|2 個處理週期|兩次/,
   );
+});
+
+function runSetup(platform, { codexReview = 'n', prepopulateTarget } = {}) {
+  const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'builder-pm-setup-'));
+  const source = path.join(sandbox, 'source');
+  const target = path.join(sandbox, 'target');
+  fs.mkdirSync(source);
+  fs.copyFileSync(path.join(ROOT, 'setup.sh'), path.join(source, 'setup.sh'));
+  fs.cpSync(path.join(ROOT, 'template'), path.join(source, 'template'), { recursive: true });
+
+  const answers = [
+    platform,
+    'matrix-project',
+    target,
+    '驗證雙執行環境',
+    'Amber',
+    'Node.js',
+    'node:test',
+    'node --test',
+    '',
+    '',
+    '',
+  ];
+  if (prepopulateTarget) {
+    prepopulateTarget(target);
+    answers.push('y');
+  }
+  answers.push('n');
+  if (platform === '' || platform === '1' || platform === 'claude') answers.push(codexReview);
+
+  const result = spawnSync('bash', ['setup.sh'], {
+    cwd: source,
+    input: `${answers.join('\n')}\n`,
+    encoding: 'utf8',
+    env: { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' },
+  });
+  return {
+    ...result,
+    target,
+    cleanup: () => fs.rmSync(sandbox, { recursive: true, force: true }),
+  };
+}
+
+function assertReviewConfig(target) {
+  const config = JSON.parse(
+    fs.readFileSync(path.join(target, '.codex/review-config.json'), 'utf8'),
+  );
+  assert.deepEqual(
+    config.knowledgeSources.map((source) => source.path),
+    ['CLAUDE.md', 'SKILLS.md', '.context/SYSTEM.md', '.context/CONVENTIONS.md'],
+  );
+  for (const source of config.knowledgeSources) {
+    assert.equal(fs.existsSync(path.join(target, source.path)), true, source.path);
+  }
+}
+
+test('Claude 預設安裝保留原入口且不安裝 Codex 入口', () => {
+  const run = runSetup('', { codexReview: 'n' });
+  try {
+    assert.equal(run.status, 0, run.stderr);
+    assert.equal(fs.existsSync(path.join(run.target, 'CLAUDE.md')), true);
+    assert.equal(fs.existsSync(path.join(run.target, '.claude/agents/coordinator.md')), true);
+    assert.equal(fs.existsSync(path.join(run.target, 'AGENTS.md')), false);
+    assert.equal(fs.existsSync(path.join(run.target, '.agents')), false);
+    assert.equal(fs.existsSync(path.join(run.target, '.codex/review-config.json')), false);
+  } finally {
+    run.cleanup();
+  }
+});
+
+test('Codex 安裝保留共用 Claude 合約並建立 Codex 入口與 review config', () => {
+  const run = runSetup('2');
+  try {
+    assert.equal(run.status, 0, run.stderr);
+    assert.equal(fs.existsSync(path.join(run.target, 'CLAUDE.md')), true);
+    assert.equal(fs.existsSync(path.join(run.target, '.claude/agents/coordinator.md')), true);
+    assert.equal(fs.existsSync(path.join(run.target, 'AGENTS.md')), true);
+    assert.equal(fs.existsSync(path.join(run.target, '.agents/skills/evaluator/SKILL.md')), true);
+    assertReviewConfig(run.target);
+    assert.match(fs.readFileSync(path.join(run.target, 'MODULES.md'), 'utf8'), /PR REVIEW.*待啟用/i);
+  } finally {
+    run.cleanup();
+  }
+});
+
+test('雙平台安裝同時保留兩邊入口', () => {
+  const run = runSetup('3');
+  try {
+    assert.equal(run.status, 0, run.stderr);
+    assert.equal(fs.existsSync(path.join(run.target, 'CLAUDE.md')), true);
+    assert.equal(fs.existsSync(path.join(run.target, '.claude')), true);
+    assert.equal(fs.existsSync(path.join(run.target, 'AGENTS.md')), true);
+    assert.equal(fs.existsSync(path.join(run.target, '.agents')), true);
+    assertReviewConfig(run.target);
+  } finally {
+    run.cleanup();
+  }
+});
+
+test('無效平台會顯示錯誤並重新詢問', () => {
+  const run = runSetup('x\n2');
+  try {
+    assert.equal(run.status, 0, run.stderr);
+    assert.match(`${run.stdout}\n${run.stderr}`, /錯誤：請輸入 1、2 或 3/);
+    assert.equal(fs.existsSync(path.join(run.target, 'AGENTS.md')), true);
+    assert.equal(fs.existsSync(path.join(run.target, '.agents/skills/evaluator/SKILL.md')), true);
+    assertReviewConfig(run.target);
+  } finally {
+    run.cleanup();
+  }
+});
+
+test('Claude 安裝到既有專案時保留原有 Codex 命名檔案', () => {
+  const agentsSentinel = 'user-owned AGENTS.md\n';
+  const customSentinel = 'user-owned .agents data\n';
+  const run = runSetup('', {
+    codexReview: 'n',
+    prepopulateTarget: (target) => {
+      fs.mkdirSync(path.join(target, '.agents/custom'), { recursive: true });
+      fs.writeFileSync(path.join(target, 'AGENTS.md'), agentsSentinel);
+      fs.writeFileSync(path.join(target, '.agents/custom/data.txt'), customSentinel);
+    },
+  });
+  try {
+    assert.equal(run.status, 0, run.stderr);
+    assert.equal(fs.readFileSync(path.join(run.target, 'AGENTS.md'), 'utf8'), agentsSentinel);
+    assert.equal(
+      fs.readFileSync(path.join(run.target, '.agents/custom/data.txt'), 'utf8'),
+      customSentinel,
+    );
+    assert.equal(fs.existsSync(path.join(run.target, 'CLAUDE.md')), true);
+    assert.equal(fs.existsSync(path.join(run.target, '.claude/agents/coordinator.md')), true);
+  } finally {
+    run.cleanup();
+  }
 });
