@@ -1,6 +1,6 @@
 # PM-AI 開發治理包 · 設計底稿(方案 B)
 
-> 狀態:🚧 進行中 checkpoint ｜ 更新:2026-06-29 ｜ 正本:builder-pm repo(唯一正本)
+> 狀態:🚧 進行中 checkpoint ｜ 更新:2026-07-13 ｜ 正本:builder-pm repo(唯一正本)
 > **這份文件是什麼**:由 brainstorming 對話累積的設計底稿,只記「已拍板」與「待辦」,不重述討論過程。
 > 完整變更史見附錄 A;brownfield 實作規格(schema / 框上限 / 測試)正本在 code 旁,索引見附錄 B。
 
@@ -88,6 +88,14 @@ builder-pm **不是從零發明**。cora 是 2026-03 從模板 **`amber-stack`**
 ## 2. 安裝與更新架構 — ✅ 鎖定(2026-06-28,PM 逐步拍板)
 
 > 里程碑:把 builder-pm 從「設計稿 + 散裝範本」變成**真能一鍵安裝的包**(`setup.sh` 問答 → 填 `{{placeholder}}` → 砍用不到 → `git init`)。v2 把「會裝進新專案的東西」圈進 `template/`,界線比 v1 乾淨(v1 設計稿與種子混在 repo 根、靠 setup.sh 手動砍)。
+
+### 2.0 雙 runtime adapter 決策 — ✅ 已實作(2026-07-13)
+
+- `setup.sh` 提供 Claude Code / Codex / 兩者三種安裝選擇。
+- `CLAUDE.md` 與 `.claude/` 維持位元不變並保留為共用治理與角色契約；`AGENTS.md` + `.agents/skills/` 是薄的 Codex adapter,不複製契約。Codex-only 也保留 `.claude`,但其 runtime 入口仍是 `AGENTS.md` + `.agents/skills/`。
+- Codex 開發完成先由全新 Evaluator subagent 做本機審查（無法啟動時 fallback `codex review --uncommitted`）,只產生 `LOCAL PASS` / `LOCAL FAIL`；GitHub PR 再由 `pr-review-agent` 產生 `PR PASS` / `PR FAIL` / `PR REVIEW BLOCKED`。`LOCAL PASS` 不等於正式交付完成。
+- Codex / 雙平台的正式 PR gate 必須使用 `codex-pr-review`。目前 CLI 相容性實測為 `codex plugin marketplace add` 可用,但 `codex plugin install` 並非所有版本都有；文件只能要求使用者啟用 / reload 後驗證 `pr-review-agent` skill,不得宣稱外掛會自動啟用。
+- 安裝採 staging copy（先組裝暫存內容再複製）並限制刪除範圍；Claude-only 安裝到 brownfield（既有專案）時,不得刪除原有 `AGENTS.md` 或 `.agents/`。
 
 ### 2.1 兩類內容:scaffold vs tool
 
@@ -556,6 +564,8 @@ template/
 ---
 
 ## 附錄 A:變更史
+
+- **2026-07-13** — 核准並完成雙 runtime adapter：安裝可選 Claude Code / Codex / 兩者；保留 `CLAUDE.md` / `.claude/` 共用正本,以 `AGENTS.md` / `.agents/skills/` 薄轉接；明確區分 LOCAL 與 PR 狀態、Codex / 雙平台的 `codex-pr-review` 正式 PR gate、CLI 啟用相容性限制,並記錄 Claude-only brownfield staging-copy 不刪既有 Codex 檔案的安全邊界。
 
 > 原本擠在文件頂部的逐日紀錄移來這;括號內為現行 §編號。
 

@@ -8,6 +8,8 @@
 - 一次只用**最小必要**組合。
 - 不用 skill 反而更快,就直接做。
 
+本檔是角色與 skill 路由的單一正本（SSOT,Single Source of Truth）,只記「誰在何時使用哪個 skill」,不重複角色契約。Claude Code 的專案 skill 放在 `.claude/skills/`;Codex 的角色 adapter 放在 `.agents/skills/`,並引用 `.claude/agents/` 的共用角色契約。
+
 ## 角色 ↔ 常駐 skill
 
 | 角色 | skill | 何時用 |
@@ -16,13 +18,13 @@
 | Generator | `test-driven-development` | 主邏輯實作、易回歸的功能 |
 | Generator | `openspec`（opt-in）| 走正式 SDD：把功能轉成 change（proposal / spec / tasks）再實作 |
 | Evaluator | `requesting-code-review` | 功能完成、進 review gate 前 |
-| Evaluator | Codex 第二模型審查（opt-in）| 要兩個不同模型交叉審 PR 時 |
+| Evaluator | `pr-review-agent`（`codex-pr-review`）| GitHub PR 建立後執行正式 PR gate；Codex / 雙平台必須啟用 |
 
-> opt-in 的兩項（openspec / Codex 審查）由 `setup.sh` 安裝時詢問;沒裝時對應角色用紀律版（見各角色合約）。
+> `openspec` 仍是 opt-in。Codex PR 審查只有在 **Claude-only** 專案作為第二模型時是選用；Codex 或雙平台專案的正式 GitHub PR gate 必須使用 `codex-pr-review` 的 `pr-review-agent`。外掛缺少、PR / 授權 / 知識來源不可用時回報 `PR REVIEW BLOCKED`,不可用本機 `LOCAL PASS` 取代。
 
 ## 專案專用 skill（自己加）
 
-> day-0 留空。按專案需要把 skill drop 進 `.claude/skills/`,在這裡補一列（標「哪個角色用 + 何時用」）。
+> day-0 留空。按專案需要新增 skill,Claude Code 放 `.claude/skills/`,Codex 放 `.agents/skills/`,並在這裡補一列（標「哪個角色用 + 何時用」）。若兩平台共用同一套行為,保留一份角色契約、以薄 adapter 引用,不要複製兩份造成 drift（內容逐漸不一致）。
 
 | skill | 角色 | 何時用 |
 |-------|------|--------|

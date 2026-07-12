@@ -254,3 +254,19 @@ test('Claude 安裝到既有專案時保留原有 Codex 命名檔案', () => {
     run.cleanup();
   }
 });
+
+test('使用者文件完整說明 Claude Code 與 Codex 雙執行環境', () => {
+  const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
+  const onboarding = fs.readFileSync(path.join(ROOT, 'template/ONBOARDING.md'), 'utf8');
+  const skills = fs.readFileSync(path.join(ROOT, 'template/SKILLS.md'), 'utf8');
+
+  assert.match(readme, /Claude Code.*Codex|Codex.*Claude Code/s);
+  assert.match(onboarding, /LOCAL PASS/);
+  assert.match(onboarding, /PR REVIEW BLOCKED/);
+  assert.match(skills, /\.agents\/skills/);
+  assert.match(skills, /pr-review-agent/);
+  assert.match(
+    `${readme}\n${onboarding}`,
+    /(?=.*(?:Codex-only|Codex only|僅 Codex|Codex 單獨))(?=.*\.claude)(?=.*(?:共用|共享).*(?:合約|契約))(?=.*(?:不是|非).*(?:runtime|執行入口))/is,
+  );
+});
