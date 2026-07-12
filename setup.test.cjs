@@ -24,6 +24,15 @@ function sha256(file) {
   return crypto.createHash('sha256').update(contents).digest('hex');
 }
 
+function parseSkill(contents, role) {
+  const frontmatterMatch = contents.match(/^---\n([\s\S]+?)\n---\n/);
+  assert.ok(frontmatterMatch, `${role} 缺少完整 YAML frontmatter`);
+  return {
+    frontmatter: frontmatterMatch[1],
+    skillBody: contents.slice(frontmatterMatch[0].length),
+  };
+}
+
 test('既有 Claude Code 核心檔案位元不變', () => {
   for (const [file, expected] of CLAUDE_BASELINE) {
     assert.equal(sha256(file), expected, `${file} 的 SHA-256 與 Claude 相容性基準不符`);
@@ -55,10 +64,7 @@ test('Codex 四角色 skills 有合法 frontmatter 與角色觸發', () => {
   for (const role of CODEX_SKILLS) {
     const file = path.join(ROOT, 'template/.agents/skills', role, 'SKILL.md');
     const body = fs.readFileSync(file, 'utf8');
-    const frontmatterMatch = body.match(/^---\n([\s\S]+?)\n---\n/);
-
-    assert.ok(frontmatterMatch, `${role} 缺少完整 YAML frontmatter`);
-    const frontmatter = frontmatterMatch[1];
+    const { frontmatter } = parseSkill(body, role);
     assert.match(frontmatter, new RegExp(`^name: builder-pm-${role}$`, 'm'));
     assert.match(frontmatter, /^description: Use when .+$/m);
     assert.match(body, new RegExp(`\\.claude/agents/${role}\\.md`));
@@ -71,10 +77,7 @@ test('Evaluator 定義唯一且完整的 Codex 審查契約', () => {
     path.join(ROOT, 'template/.agents/skills/evaluator/SKILL.md'),
     'utf8',
   );
-  const coordinator = fs.readFileSync(
-    path.join(ROOT, 'template/.agents/skills/coordinator/SKILL.md'),
-    'utf8',
-  );
+  const { skillBody: evaluatorBody } = parseSkill(evaluator, 'evaluator');
 
   assert.match(
     evaluator,
@@ -85,6 +88,28 @@ test('Evaluator 定義唯一且完整的 Codex 審查契約', () => {
   assert.match(evaluator, /PR PASS.*PR FAIL.*PR REVIEW BLOCKED/);
   assert.match(evaluator, /PR 驗收待完成/);
   assert.match(evaluator, /LOCAL PASS.*不得.*PR PASS/);
-  assert.match(coordinator, /\.agents\/skills\/evaluator\/SKILL\.md/);
-  assert.doesNotMatch(coordinator, /codex review --uncommitted|LOCAL PASS|PR REVIEW BLOCKED/);
+  assert.match(evaluatorBody, /Codex override/);
+  assert.match(evaluatorBody, /優先於.*\.claude\/agents\/evaluator\.md/);
+  assert.match(evaluatorBody, /不得輸出.*Overall/);
+  assert.match(evaluatorBody, /LOCAL PASS/);
+  assert.match(evaluatorBody, /PR PASS/);
+  assert.match(evaluatorBody, /PR REVIEW BLOCKED/);
+});
+
+test('Coordinator adapter 只保留 Codex Evaluator 交接', () => {
+  const coordinator = fs.readFileSync(
+    path.join(ROOT, 'template/.agents/skills/coordinator/SKILL.md'),
+    'utf8',
+  );
+  const { skillBody: coordinatorBody } = parseSkill(coordinator, 'coordinator');
+
+  assert.match(coordinatorBody, /\.agents\/skills\/evaluator\/SKILL\.md/);
+  assert.doesNotMatch(coordinatorBody, /codex review --uncommitted|LOCAL PASS|PR REVIEW BLOCKED/);
+  assert.match(coordinatorBody, /全新、唯讀.*sub-agent/);
+  assert.match(coordinatorBody, /不得.*Generator.*品質結論/);
+  assert.match(coordinatorBody, /無法.*fallback/);
+  assert.doesNotMatch(
+    coordinatorBody,
+    /不清楚的需求|模糊需求|production code|2 個處理週期|兩次/,
+  );
 });

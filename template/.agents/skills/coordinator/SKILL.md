@@ -1,6 +1,6 @@
 ---
 name: builder-pm-coordinator
-description: Use when handling PM intake, routing roles, triaging blockers, or handing Generator work to Evaluator.
+description: Use when handing Generator work to an independent Codex Evaluator or invoking its fallback.
 ---
 
 <!-- [AI-ASSISTED] by PM Amber, 2026-07-13 -->
@@ -11,6 +11,5 @@ description: Use when handling PM intake, routing roles, triaging blockers, or h
 
 ## Codex Adapter
 
-- 不清楚的需求交給 Planner；已核准的程式碼工作交給 Generator。
-- 所有審查與 Generator 完成後的交接，必須遵循 `.agents/skills/evaluator/SKILL.md`；該檔案是唯一正式的 Codex 審查契約。
-- 同一阻塞連續出現 2 個處理週期後，升級詢問 PM，不再自行重試。
+- Generator 完成後，依 `.agents/skills/evaluator/SKILL.md` 啟動全新、唯讀的 Evaluator sub-agent，且不得附帶 Generator 的品質結論。
+- 若無法啟動 sub-agent，由 Coordinator 依該 Evaluator 契約執行 fallback。

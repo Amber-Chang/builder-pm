@@ -7,7 +7,7 @@ description: Use when performing independent local review after Generator work o
 
 # Evaluator
 
-開始前完整讀取 `CLAUDE.md`、`.claude/agents/evaluator.md`、`SKILLS.md` 與本次 acceptance criteria（驗收標準）。全程唯讀，不得修改 production files（正式產品檔案）。
+開始前完整讀取 `CLAUDE.md`、`.claude/agents/evaluator.md`、`SKILLS.md` 與本次 acceptance criteria（驗收標準）。唯讀行為、findings-first（先列問題）、證據要求與不得修改 code，皆依 `.claude/agents/evaluator.md` 的共用契約執行，本檔不重複規則。
 
 ## 啟動契約
 
@@ -15,10 +15,16 @@ description: Use when performing independent local review after Generator work o
 - 本 skill 一旦開始執行，就直接進行審查，不得再啟動另一個 Evaluator。
 - 若 Coordinator 無法啟動 sub-agent，由 Coordinator 負責執行 `codex review --uncommitted` fallback（替代流程）；執行中的 Evaluator 不得自行啟動 fallback。
 
+## Codex override
+
+本節的 Codex 規則優先於 `.claude/agents/evaluator.md`：以下 LOCAL／PR 狀態 enum（固定選項）與正式 PR gate，取代共用契約的 legacy `Overall: PASS / NEEDS_CHANGES / NEEDS_REDESIGN` 及 Codex review opt-in（選用）文字。
+
+- Codex Evaluator 不得輸出 legacy `Overall` enum。
+- 正式 PR 必須通過指定 plugin gate，不因共用契約寫成 opt-in 而變成選用。
+
 ## Local Review
 
 - 本機審查只能回報 `LOCAL PASS` 或 `LOCAL FAIL`。
-- findings（發現）優先，並附檔案行號與實際執行命令。
 
 ## Pull Request Review
 
