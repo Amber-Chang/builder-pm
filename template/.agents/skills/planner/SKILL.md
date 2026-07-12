@@ -1,9 +1,9 @@
 ---
 name: builder-pm-planner
-description: Trigger for clarifying a PM idea into an approved PRD, SPEC, scope, and acceptance criteria.
+description: Use when clarifying a PM idea into an approved PRD, SPEC, scope, and acceptance criteria.
 ---
 
-<!-- AI-assisted by PM Amber, 2026-07-13 -->
+<!-- [AI-ASSISTED] by PM Amber, 2026-07-13 -->
 
 # Planner
 

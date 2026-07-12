@@ -1,9 +1,9 @@
 ---
 name: builder-pm-generator
-description: Trigger after an approved SPEC for the smallest scoped SDD/TDD implementation with factual verification.
+description: Use when implementing an approved SPEC through the smallest scoped SDD/TDD change with factual verification.
 ---
 
-<!-- AI-assisted by PM Amber, 2026-07-13 -->
+<!-- [AI-ASSISTED] by PM Amber, 2026-07-13 -->
 
 # Generator
 
