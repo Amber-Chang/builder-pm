@@ -31,7 +31,7 @@ replace_in_file() {
   "${SED_INPLACE[@]}" "s|${placeholder}|${esc}|g" "$file"
 }
 
-# 對單一檔案套用全部 9 個佔位符。
+# 對單一檔案套用全部 10 個佔位符。
 fill_placeholders() {
   local file="$1"
   replace_in_file "$file" "{{PROJECT_NAME}}"            "$PROJECT_NAME"
@@ -43,6 +43,7 @@ fill_placeholders() {
   replace_in_file "$file" "{{PLANNER_EXTRA_SKILLS}}"    "$PLANNER_EXTRA_SKILLS"
   replace_in_file "$file" "{{GENERATOR_EXTRA_SKILLS}}"  "$GENERATOR_EXTRA_SKILLS"
   replace_in_file "$file" "{{EVALUATOR_EXTRA_SKILLS}}"  "$EVALUATOR_EXTRA_SKILLS"
+  replace_in_file "$file" "{{CODEX_REVIEW_POLICY}}"     "$CODEX_REVIEW_POLICY"
 }
 
 # 把可能是相對路徑的輸入轉成絕對路徑（唯讀，不建立任何目錄）。
@@ -158,6 +159,18 @@ else
   ENABLE_CODEX=y
 fi
 
+if [ "$DEV_PLATFORM" = "claude" ]; then
+  if [ "$ENABLE_CODEX" = "y" ]; then
+    CODEX_REVIEW_POLICY="Claude-only／Codex 為選用的第二模型額外審查：不取代既有 Claude 獨立驗收，亦非此 runtime 的必要 PR Gate。"
+  else
+    CODEX_REVIEW_POLICY="Claude-only／Codex review 未啟用：本節僅供參考，不阻擋交付。"
+  fi
+elif [ "$DEV_PLATFORM" = "codex" ]; then
+  CODEX_REVIEW_POLICY="Codex-only／正式 GitHub PR 必須通過 Codex review Gate。"
+else
+  CODEX_REVIEW_POLICY="雙平台／正式 GitHub PR 必須通過 Codex review Gate。"
+fi
+
 # ---------------------------------------------------------------------------
 # 3. 複製種子（含隱藏檔）+ 填佔位符
 # ---------------------------------------------------------------------------
@@ -209,7 +222,7 @@ fi
 # ---------------------------------------------------------------------------
 MODULES_FILE="$TARGET_ABS/MODULES.md"
 {
-  echo "# 可選模組（opt-in）狀態"
+  echo "# 模組與必要 Gate 狀態"
   echo ""
   echo "本檔由 setup.sh 自動產生，記錄安裝時選擇了哪些可選模組，以及每個模組的下一步操作。"
   echo "腳本**只印指令、不自動執行外部 CLI**；下列指令請你自行確認後執行。"
@@ -230,7 +243,11 @@ MODULES_FILE="$TARGET_ABS/MODULES.md"
     echo "狀態：未啟用，日後可手動加（重跑 setup.sh 選 y，或自行執行 \`npx openspec init\`）。"
   fi
   echo ""
-  echo "## Codex PR 審查（給 Evaluator 當第二模型）"
+  if [ "$DEV_PLATFORM" = "claude" ]; then
+    echo "## Codex PR 審查（Claude-only 選用第二模型）"
+  else
+    echo "## Codex PR 審查（Codex／雙平台必要 PR Gate）"
+  fi
   echo ""
   if [ "$ENABLE_CODEX" = "y" ]; then
     if [ "$DEV_PLATFORM" = "claude" ]; then

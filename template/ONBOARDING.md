@@ -39,11 +39,19 @@
 
 > 註:目前這份是「流程說明書」。把它變成一支真正的 `/onboard` slash 指令是之後的事;現階段照這份走即可。
 
-## Codex 開工與驗收
+## Codex 驗收（依安裝模式）
+
+本次安裝狀態：{{CODEX_REVIEW_POLICY}}
+
+### Claude-only：停用或選用第二模型
+
+若本次未啟用 Codex review，本節其餘內容僅供日後評估，不阻擋交付。若已啟用，它是 Claude 獨立驗收之外的選用第二模型額外審查，不取代既有 Claude review，也不是 Claude-only runtime 的必要 PR Gate。
+
+### Codex-only／雙平台：必要 PR Gate
 
 Codex 的讀取順序是 `AGENTS.md` → 共用治理正本 `CLAUDE.md`;角色分流由 `.agents/skills/` 的四個 adapter 負責,實際角色契約仍引用 `.claude/agents/`。Codex-only（僅 Codex）保留 `.claude` 是因為這些是兩平台共用合約,**不是 Codex runtime（執行入口）**;Codex runtime 仍是 `AGENTS.md` + `.agents/skills/`。
 
-開發完成後,Coordinator 必須啟動一個**全新、唯讀的 Evaluator subagent（子代理）**做本機獨立驗收；若環境無法啟動 subagent,才使用 fallback（備援）指令：
+在 Codex-only 或雙平台安裝中，開發完成後必須啟動一個**全新、唯讀的 Evaluator subagent（子代理）**做本機獨立驗收；若環境無法啟動 subagent,才使用 fallback（備援）指令：
 
 ```bash
 codex review --uncommitted
@@ -51,7 +59,7 @@ codex review --uncommitted
 
 本機結果只有 `LOCAL PASS` / `LOCAL FAIL`。`LOCAL PASS` 只表示目前工作樹通過本機驗收,**不是 `PR PASS`,也不代表正式交付完成**。
 
-建立 GitHub PR 後還有第二階段：必須由 `codex-pr-review` 外掛的 `pr-review-agent` 執行正式 PR gate（關卡）,結果為 `PR PASS` / `PR FAIL` / `PR REVIEW BLOCKED`。缺少外掛、找不到 PR、GitHub 授權失效或必要知識來源不可讀時,不得略過或把本機結果升格,必須回報 `PR REVIEW BLOCKED`。安裝提示不等於已啟用；請 reload Codex 並確認能找到 `pr-review-agent`。
+建立正式 GitHub PR 後還有第二階段：Codex-only 或雙平台安裝必須由 `codex-pr-review` 外掛的 `pr-review-agent` 通過正式必要 PR gate（關卡）,結果為 `PR PASS` / `PR FAIL` / `PR REVIEW BLOCKED`。缺少外掛、找不到 PR、GitHub 授權失效或必要知識來源不可讀時,不得略過或把本機結果升格,必須回報 `PR REVIEW BLOCKED`。安裝提示不等於已啟用；請 reload Codex 並確認能找到 `pr-review-agent`。
 
 ## 既有專案的開工路徑（Brownfield）
 

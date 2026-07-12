@@ -196,6 +196,15 @@ function assertCodexCliContract(modules) {
   assert.doesNotMatch(modules, /codex plugin install/);
 }
 
+function readInstalledDoc(target, file) {
+  return fs.readFileSync(path.join(target, file), 'utf8');
+}
+
+function assertInstalledOnboarding(onboarding, policy) {
+  assert.match(onboarding, new RegExp(`本次安裝狀態：${policy}`));
+  assert.doesNotMatch(onboarding, /\{\{CODEX_REVIEW_POLICY\}\}/);
+}
+
 test('Claude 預設安裝保留原入口且不安裝 Codex 入口', () => {
   const run = runSetup('', { codexReview: 'n' });
   try {
@@ -205,6 +214,14 @@ test('Claude 預設安裝保留原入口且不安裝 Codex 入口', () => {
     assert.equal(fs.existsSync(path.join(run.target, 'AGENTS.md')), false);
     assert.equal(fs.existsSync(path.join(run.target, '.agents')), false);
     assert.equal(fs.existsSync(path.join(run.target, '.codex/review-config.json')), false);
+    const onboarding = readInstalledDoc(run.target, 'ONBOARDING.md');
+    const modules = readInstalledDoc(run.target, 'MODULES.md');
+    assertInstalledOnboarding(
+      onboarding,
+      'Claude-only／Codex review 未啟用：本節僅供參考，不阻擋交付。',
+    );
+    assert.match(modules, /^# 模組與必要 Gate 狀態$/m);
+    assert.match(modules, /^## Codex PR 審查（Claude-only 選用第二模型）$/m);
   } finally {
     run.cleanup();
   }
@@ -222,6 +239,13 @@ test('Claude 啟用 Codex review 時建立設定與提供 plugin 安裝指引', 
     assert.match(modules, /fallback/i);
     assert.equal(fs.existsSync(path.join(run.target, 'AGENTS.md')), false);
     assert.equal(fs.existsSync(path.join(run.target, '.agents')), false);
+    const onboarding = readInstalledDoc(run.target, 'ONBOARDING.md');
+    assertInstalledOnboarding(
+      onboarding,
+      'Claude-only／Codex 為選用的第二模型額外審查：不取代既有 Claude 獨立驗收，亦非此 runtime 的必要 PR Gate。',
+    );
+    assert.match(modules, /^# 模組與必要 Gate 狀態$/m);
+    assert.match(modules, /^## Codex PR 審查（Claude-only 選用第二模型）$/m);
   } finally {
     run.cleanup();
   }
@@ -239,6 +263,13 @@ test('Codex 安裝保留共用 Claude 合約並建立 Codex 入口與 review con
     const modules = fs.readFileSync(path.join(run.target, 'MODULES.md'), 'utf8');
     assert.match(modules, /PR REVIEW.*待啟用/i);
     assertCodexCliContract(modules);
+    const onboarding = readInstalledDoc(run.target, 'ONBOARDING.md');
+    assertInstalledOnboarding(
+      onboarding,
+      'Codex-only／正式 GitHub PR 必須通過 Codex review Gate。',
+    );
+    assert.match(modules, /^# 模組與必要 Gate 狀態$/m);
+    assert.match(modules, /^## Codex PR 審查（Codex／雙平台必要 PR Gate）$/m);
   } finally {
     run.cleanup();
   }
@@ -253,7 +284,15 @@ test('雙平台安裝同時保留兩邊入口', () => {
     assert.equal(fs.existsSync(path.join(run.target, 'AGENTS.md')), true);
     assert.equal(fs.existsSync(path.join(run.target, '.agents')), true);
     assertReviewConfig(run.target);
-    assertCodexCliContract(fs.readFileSync(path.join(run.target, 'MODULES.md'), 'utf8'));
+    const modules = readInstalledDoc(run.target, 'MODULES.md');
+    assertCodexCliContract(modules);
+    const onboarding = readInstalledDoc(run.target, 'ONBOARDING.md');
+    assertInstalledOnboarding(
+      onboarding,
+      '雙平台／正式 GitHub PR 必須通過 Codex review Gate。',
+    );
+    assert.match(modules, /^# 模組與必要 Gate 狀態$/m);
+    assert.match(modules, /^## Codex PR 審查（Codex／雙平台必要 PR Gate）$/m);
   } finally {
     run.cleanup();
   }
