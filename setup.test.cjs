@@ -35,6 +35,15 @@ function parseSkill(contents, role) {
   };
 }
 
+function markdownSection(contents, heading) {
+  const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = contents.match(
+    new RegExp(`^## ${escapedHeading}\\s*$([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, 'm'),
+  );
+  assert.ok(match, `缺少 Markdown 區段：## ${heading}`);
+  return match[1];
+}
+
 test('既有 Claude Code 核心檔案位元不變', () => {
   for (const [file, expected] of CLAUDE_BASELINE) {
     assert.equal(sha256(file), expected, `${file} 的 SHA-256 與 Claude 相容性基準不符`);
@@ -259,6 +268,15 @@ test('使用者文件完整說明 Claude Code 與 Codex 雙執行環境', () => 
   const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
   const onboarding = fs.readFileSync(path.join(ROOT, 'template/ONBOARDING.md'), 'utf8');
   const skills = fs.readFileSync(path.join(ROOT, 'template/SKILLS.md'), 'utf8');
+  const installAndStructure = [
+    markdownSection(readme, '一鍵安裝'),
+    markdownSection(readme, '結構'),
+  ].join('\n');
+  const codexWorkflow = [
+    markdownSection(readme, '角色團隊(交付流水線)'),
+    markdownSection(readme, 'Codex 兩階段審查'),
+  ].join('\n');
+  const modulesAndGate = markdownSection(readme, '模組與必要 Gate');
 
   assert.match(readme, /Claude Code.*Codex|Codex.*Claude Code/s);
   assert.match(readme, /AGENTS\.md/);
@@ -273,8 +291,35 @@ test('使用者文件完整說明 Claude Code 與 Codex 雙執行環境', () => 
     readme,
     /(?=.*\.claude)(?=.*(?:保留|沿用))(?=.*(?:共用|共享).*(?:合約|契約))(?=.*(?:不是|非).*(?:runtime|執行入口))/is,
   );
+  assert.match(installAndStructure, /安裝來源/);
+  assert.match(installAndStructure, /依平台裁剪/);
+  assert.match(installAndStructure, /AGENTS\.md[^\n]*(?:Codex|雙平台|兩者)/);
+  assert.match(installAndStructure, /\.agents\/skills[^\n]*(?:Codex|雙平台|兩者)/);
+  for (const contract of [
+    /AGENTS\.md/,
+    /CLAUDE\.md/,
+    /\.agents\/skills/,
+    /LOCAL PASS/,
+    /PR REVIEW BLOCKED/,
+    /pr-review-agent/,
+  ]) {
+    assert.match(codexWorkflow, contract);
+  }
+  assert.match(modulesAndGate, /^(?=[^\n]*openspec)(?=[^\n]*(?:選用|optional)).*$/im);
+  assert.match(modulesAndGate, /^(?=[^\n]*Claude-only)(?=[^\n]*(?:選用|optional)).*$/im);
+  assert.match(
+    modulesAndGate,
+    /^(?=[^\n]*Codex \/ 雙平台)(?=[^\n]*(?:必須|必要|required))(?=[^\n]*(?:正式 PR|PR gate)).*$/im,
+  );
   assert.match(onboarding, /LOCAL PASS/);
   assert.match(onboarding, /PR REVIEW BLOCKED/);
+  assert.doesNotMatch(onboarding, /\]\(docs\/design\.md(?:[^)]*)\)/);
+  assert.match(
+    onboarding,
+    /https:\/\/github\.com\/Amber-Chang\/builder-pm\/blob\/main\/docs\/design\.md/,
+  );
+  assert.match(onboarding, /§6\.4/);
+  assert.match(onboarding, /§6\.5/);
   assert.match(skills, /\.agents\/skills/);
   assert.match(skills, /pr-review-agent/);
   assert.match(

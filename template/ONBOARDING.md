@@ -1,5 +1,5 @@
 <!-- [AI-ASSISTED] by PM Amber (via AI Agent), 2026-06-28 -->
-<!-- 功能：新專案裝上 builder-pm 後的開工指南——從空白走到真的能開始做。對應 docs/design.md §4.3。 -->
+<!-- 功能：新專案裝上 builder-pm 後的開工指南——從空白走到真的能開始做。對應 https://github.com/Amber-Chang/builder-pm/blob/main/docs/design.md §6.4。 -->
 
 # 新專案開工指南（Onboarding）
 
@@ -35,7 +35,7 @@
 
 ## 為什麼這樣設計
 
-冷啟動能「薄」,是因為 builder-pm 有三個會自己運轉的迴圈(學習捕捉 / 防膨脹 / drift 守門),它們**就是知識層的成長引擎**。完整設計與業界對標見 `docs/design.md` §4.3。
+冷啟動能「薄」,是因為 builder-pm 有三個會自己運轉的迴圈(學習捕捉 / 防膨脹 / drift 守門),它們**就是知識層的成長引擎**。完整設計與業界對標見[設計文件 §6.4](https://github.com/Amber-Chang/builder-pm/blob/main/docs/design.md)。
 
 > 註:目前這份是「流程說明書」。把它變成一支真正的 `/onboard` slash 指令是之後的事;現階段照這份走即可。
 
@@ -56,7 +56,7 @@ codex review --uncommitted
 ## 既有專案的開工路徑（Brownfield）
 
 > 你不是 day-0 空專案，而是把 builder-pm 接到一個**已開發到一半的既有 code base**。
-> §4.3 的「薄起步」前提在這裡破了：`.context/` 是空的，但舊知識全藏在 code 裡。
+> [設計文件 §6.4](https://github.com/Amber-Chang/builder-pm/blob/main/docs/design.md)的「薄起步」前提在這裡破了：`.context/` 是空的，但舊知識全藏在 code 裡；brownfield 接入設計見同文件 §6.5。
 
 **四步接入：**
 
@@ -74,4 +74,4 @@ codex review --uncommitted
 
 4. **回到正常 day-N 三迴圈**——正式 `.context/` 補好後，`context-growth` 偵測器才能正常運作（不再噪音轟炸）。
 
-> 暫存草稿落在 `.context/.backfill/`，已被 `.gitignore` 排除，不會被 `git add -A` 誤收。完整設計見 `docs/design.md §4.4`。
+> 暫存草稿落在 `.context/.backfill/`，已被 `.gitignore` 排除，不會被 `git add -A` 誤收。完整設計見[設計文件 §6.5](https://github.com/Amber-Chang/builder-pm/blob/main/docs/design.md)。
