@@ -1,6 +1,6 @@
 ---
 name: builder-pm-coordinator
-description: Use when handing Generator work to an independent Codex Evaluator or invoking its fallback.
+description: Use when handling PM intake, role routing, blocker triage, or Generator-to-Evaluator handoff in builder-pm projects.
 ---
 
 <!-- [AI-ASSISTED] by PM Amber, 2026-07-13 -->

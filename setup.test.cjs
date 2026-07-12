@@ -101,8 +101,12 @@ test('Coordinator adapter 只保留 Codex Evaluator 交接', () => {
     path.join(ROOT, 'template/.agents/skills/coordinator/SKILL.md'),
     'utf8',
   );
-  const { skillBody: coordinatorBody } = parseSkill(coordinator, 'coordinator');
+  const { frontmatter, skillBody: coordinatorBody } = parseSkill(coordinator, 'coordinator');
 
+  assert.match(
+    frontmatter,
+    /^description: Use when handling PM intake, role routing, blocker triage, or Generator-to-Evaluator handoff in builder-pm projects\.$/m,
+  );
   assert.match(coordinatorBody, /\.agents\/skills\/evaluator\/SKILL\.md/);
   assert.doesNotMatch(coordinatorBody, /codex review --uncommitted|LOCAL PASS|PR REVIEW BLOCKED/);
   assert.match(coordinatorBody, /全新、唯讀.*sub-agent/);
