@@ -113,6 +113,22 @@ test('spec-coverage：有 SPEC 涵蓋的 module journey → 不出現', () => {
   );
 });
 
+test('spec-coverage：舊 docs/04-specs 的 SPEC → 不算覆蓋', () => {
+  const r = runJson(SAMPLE);
+  assert.ok(
+    modulesOf(r.spec_coverage_gaps).includes('segmentation'),
+    'docs/04-specs 不再是有效 SPEC 路徑，不該提供覆蓋'
+  );
+});
+
+test('spec-coverage：docs/02-spec 的 README 與範本 → 不算正式 SPEC 覆蓋', () => {
+  const r = runJson(SAMPLE);
+  assert.ok(
+    modulesOf(r.spec_coverage_gaps).includes('segmentation'),
+    'README 或範本提到 module 不該提供 SPEC 覆蓋'
+  );
+});
+
 // ── 檢查 4：system_section_candidates ───────────────────────────────────────────
 test('system-section：不在 SYSTEM 的 module segmentation → 出現在 system_section_candidates', () => {
   const r = runJson(SAMPLE);

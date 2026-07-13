@@ -369,6 +369,8 @@ PM 心智圖每個角色框「下面那行字」全是 cora 的**工具選擇**,
 
 **v1 的 bug(冷啟動為何被標成缺陷)**:`setup.sh` 結尾叫 PM「Next steps:填 SYSTEM.md / 填 GLOSSARY.md」—— 這是**早問 bug**:要 PM 在 day-0 填兩個那時根本沒資訊可填的檔(SYSTEM 要先有架構決策、GLOSSARY 要先 spec 過功能)。真實 day-0 PM 手上頂多**技術選型 + 第一版 PRD**。
 
+**正式文件目錄(2026-07-13)**:PRD 使用 `docs/01-prd/PRD-<三位數>-<slug>.md`，SPEC 使用 `docs/02-spec/SPEC-<三位數>-<slug>.md`。每份 SPEC 必須有一份主要 PRD，關聯由 SPEC frontmatter 的 `related_prd` 建立；一份 PRD 對多份 SPEC 的對照由檢查器導出，不維護人工第三張表。新安裝採新結構，既有專案不會自動遷移。`docs/inbox/`、`docs/research/`、`docs/decisions/` 都只在首次真的需要時建立，不預先建立。敏感逐字稿留在受控外部位置，Git 只放安全摘要。
+
 **修正後的序列(薄起步 → 邊做邊長):**
 ```
 Day-0(薄)

@@ -42,12 +42,18 @@ template/    # ★ 完整安裝來源集；setup.sh 依平台裁剪後安裝
   .agents/skills/    # Codex / 雙平台安裝；Claude-only 從 staging 裁剪
   SKILLS.md          # 角色 ↔ skill 對照(單一正本)
   .context/          # 專案知識,隨專案長(SYSTEM / GLOSSARY / CONVENTIONS / modules)
+  docs/01-prd/       # 正式產品需求(PRD-NNN-slug.md)
+  docs/02-spec/      # 正式實作規格(SPEC-NNN-slug.md)
   loops/             # 自我維持迴圈(防膨脹 / 學習捕捉 / 知識成長)
   gates/             # 自動攔截(drift 事實檢查)
   ONBOARDING.md      # 開工指南
 setup.sh     # 一鍵安裝腳本(複製 template/ → 新專案 + 填值 + git init)
 docs/        # 設計與說明(design.md = 正本)
 ```
+
+正式文件規則：PRD 放 `docs/01-prd/PRD-<三位數>-<slug>.md`，SPEC 放 `docs/02-spec/SPEC-<三位數>-<slug>.md`。每份 SPEC 必須以 frontmatter 的 `related_prd` 指向一份主要 PRD；一份 PRD 對多份 SPEC 的對照由檢查器導出，不維護人工第三張表。新安裝採新結構，既有專案不會自動遷移。
+
+不要預先建立 `docs/inbox/`、`docs/research/` 或 `docs/decisions/`，首次真的需要時才建立。敏感逐字稿留在受控外部位置，Git 只放安全摘要。
 
 > **「輕量」不是「沒有檔案」,而是「預設心智模型夠小」**:你每天要 hold 在腦裡的只有 **10 條原則、4 個角色、2 個硬關卡**;`loops/` `gates/` `.context/` 是會自己長 / 自動跑的機制,不是 day1 要讀完的負擔。
 

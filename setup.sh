@@ -324,7 +324,7 @@ echo "============================================"
 echo ""
 echo "下一步："
 echo "  1. 讀 ONBOARDING.md（開工指南）—— 從空白到開始做怎麼走"
-echo "  2. 寫第一版 PRD（接 brainstorming）；先別填 SYSTEM/GLOSSARY，.context/ 會邊做邊長"
+echo "  2. 寫第一份 PRD（接 brainstorming）放在 docs/01-prd/PRD-001-<slug>.md；先別填 SYSTEM/GLOSSARY，.context/ 會邊做邊長"
 if [ "$BROWNFIELD_DETECTED" = "y" ]; then
   case "$DEV_PLATFORM" in
     claude) echo "  ⚡ 偵測到既有 git 專案 → 裝好後在 Claude 執行 /backfill-context，讓 AI 草擬 .context/ 三份文件" ;;
