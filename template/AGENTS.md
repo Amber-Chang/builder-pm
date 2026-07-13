@@ -11,6 +11,7 @@
 ## 角色路由
 
 - PRD、SPEC 或需求範圍不清楚：讀取並使用 `.agents/skills/planner/SKILL.md`。
+- 需要從訪談、正式文件或其他知識來源整理需求：選用 `.agents/skills/knowledge-curation/SKILL.md`，並依其指向使用 canonical Skill。
 - 已核准規格的 production code（正式產品程式碼）：讀取並使用 `.agents/skills/generator/SKILL.md`。
 - 任務路由、阻塞排除或交接：讀取並使用 `.agents/skills/coordinator/SKILL.md`。
 - 本機或 Pull Request review（程式碼審查）：讀取並使用 `.agents/skills/evaluator/SKILL.md`。
