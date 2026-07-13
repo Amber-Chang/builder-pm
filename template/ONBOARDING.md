@@ -1,5 +1,5 @@
 <!-- [AI-ASSISTED] by PM Amber (via AI Agent), 2026-06-28 -->
-<!-- 功能：新專案裝上 builder-pm 後的開工指南——從空白走到真的能開始做。對應 docs/design.md §4.3。 -->
+<!-- 功能：新專案裝上 builder-pm 後的開工指南——從空白走到真的能開始做。對應 https://github.com/Amber-Chang/builder-pm/blob/main/docs/design.md §6.4。 -->
 
 # 新專案開工指南（Onboarding）
 
@@ -35,20 +35,42 @@
 
 ## 為什麼這樣設計
 
-冷啟動能「薄」,是因為 builder-pm 有三個會自己運轉的迴圈(學習捕捉 / 防膨脹 / drift 守門),它們**就是知識層的成長引擎**。完整設計與業界對標見 `docs/design.md` §4.3。
+冷啟動能「薄」,是因為 builder-pm 有三個會自己運轉的迴圈(學習捕捉 / 防膨脹 / drift 守門),它們**就是知識層的成長引擎**。完整設計與業界對標見[設計文件 §6.4](https://github.com/Amber-Chang/builder-pm/blob/main/docs/design.md)。
 
 > 註:目前這份是「流程說明書」。把它變成一支真正的 `/onboard` slash 指令是之後的事;現階段照這份走即可。
+
+## Codex 驗收（依安裝模式）
+
+本次安裝狀態：{{CODEX_REVIEW_POLICY}}
+
+### Claude-only：停用或選用第二模型
+
+若本次未啟用 Codex review，本節其餘內容僅供日後評估，不阻擋交付。若已啟用，它是 Claude 獨立驗收之外的選用第二模型額外審查，不取代既有 Claude review，也不是 Claude-only runtime 的必要 PR Gate。
+
+### Codex-only／雙平台：必要 PR Gate
+
+Codex 的讀取順序是 `AGENTS.md` → 共用治理正本 `CLAUDE.md`;角色分流由 `.agents/skills/` 的四個 adapter 負責,實際角色契約仍引用 `.claude/agents/`。Codex-only（僅 Codex）保留 `.claude` 是因為這些是兩平台共用合約,**不是 Codex runtime（執行入口）**;Codex runtime 仍是 `AGENTS.md` + `.agents/skills/`。
+
+在 Codex-only 或雙平台安裝中，開發完成後必須啟動一個**全新、唯讀的 Evaluator subagent（子代理）**做本機獨立驗收；若環境無法啟動 subagent,才使用 fallback（備援）指令：
+
+```bash
+codex review --uncommitted
+```
+
+本機結果只有 `LOCAL PASS` / `LOCAL FAIL`。`LOCAL PASS` 只表示目前工作樹通過本機驗收,**不是 `PR PASS`,也不代表正式交付完成**。
+
+建立正式 GitHub PR 後還有第二階段：Codex-only 或雙平台安裝必須由 `codex-pr-review` 外掛的 `pr-review-agent` 通過正式必要 PR gate（關卡）,結果為 `PR PASS` / `PR FAIL` / `PR REVIEW BLOCKED`。缺少外掛、找不到 PR、GitHub 授權失效或必要知識來源不可讀時,不得略過或把本機結果升格,必須回報 `PR REVIEW BLOCKED`。安裝提示不等於已啟用；請 reload Codex 並確認能找到 `pr-review-agent`。
 
 ## 既有專案的開工路徑（Brownfield）
 
 > 你不是 day-0 空專案，而是把 builder-pm 接到一個**已開發到一半的既有 code base**。
-> §4.3 的「薄起步」前提在這裡破了：`.context/` 是空的，但舊知識全藏在 code 裡。
+> [設計文件 §6.4](https://github.com/Amber-Chang/builder-pm/blob/main/docs/design.md)的「薄起步」前提在這裡破了：`.context/` 是空的，但舊知識全藏在 code 裡；brownfield 接入設計見同文件 §6.5。
 
 **四步接入：**
 
 1. **你不是 day-0**——`.context/` 是空的，但既有 code/docs 裡已有知識，直接走 day-N 三迴圈會噪音轟炸（偵測器假設「知識本來就在長」，brownfield 是「從來沒被寫下」）。先補第一層知識。
 
-2. **在 Claude 跑 `/backfill-context`**——指令會自動：
+2. **回填既有脈絡**——Claude Code 跑 `/backfill-context`;Codex 則明確要求它遵循 `.claude/commands/backfill-context.md`。兩者都只產生草稿,仍由 PM 審核與批准後才搬入正式 `.context/`。流程會：
    - 跑 `onboarding/backfill/scan-evidence.cjs` 掃描 code + docs + git（確定性、框上限）
    - 讀 `evidence.json` + 抽看關鍵檔，草擬三份草稿（SYSTEM/modules/GLOSSARY 候選）+ 一份 REPORT 進 `.context/.backfill/`：
      - `SYSTEM.draft.md`（帶信心橫幅 🟢🟡🔴 + 出處）
@@ -60,4 +82,4 @@
 
 4. **回到正常 day-N 三迴圈**——正式 `.context/` 補好後，`context-growth` 偵測器才能正常運作（不再噪音轟炸）。
 
-> 暫存草稿落在 `.context/.backfill/`，已被 `.gitignore` 排除，不會被 `git add -A` 誤收。完整設計見 `docs/design.md §4.4`。
+> 暫存草稿落在 `.context/.backfill/`，已被 `.gitignore` 排除，不會被 `git add -A` 誤收。完整設計見[設計文件 §6.5](https://github.com/Amber-Chang/builder-pm/blob/main/docs/design.md)。

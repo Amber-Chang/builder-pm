@@ -31,7 +31,7 @@ replace_in_file() {
   "${SED_INPLACE[@]}" "s|${placeholder}|${esc}|g" "$file"
 }
 
-# 對單一檔案套用全部 9 個佔位符。
+# 對單一檔案套用全部 10 個佔位符。
 fill_placeholders() {
   local file="$1"
   replace_in_file "$file" "{{PROJECT_NAME}}"            "$PROJECT_NAME"
@@ -43,6 +43,7 @@ fill_placeholders() {
   replace_in_file "$file" "{{PLANNER_EXTRA_SKILLS}}"    "$PLANNER_EXTRA_SKILLS"
   replace_in_file "$file" "{{GENERATOR_EXTRA_SKILLS}}"  "$GENERATOR_EXTRA_SKILLS"
   replace_in_file "$file" "{{EVALUATOR_EXTRA_SKILLS}}"  "$EVALUATOR_EXTRA_SKILLS"
+  replace_in_file "$file" "{{CODEX_REVIEW_POLICY}}"     "$CODEX_REVIEW_POLICY"
 }
 
 # 把可能是相對路徑的輸入轉成絕對路徑（唯讀，不建立任何目錄）。
@@ -67,6 +68,16 @@ echo ""
 # ---------------------------------------------------------------------------
 # 1. 互動問答（每題給合理預設）
 # ---------------------------------------------------------------------------
+while true; do
+  read -p "開發工具：1) Claude Code（預設） 2) Codex 3) 兩者 [1]: " ans_platform || true
+  case "${ans_platform:-1}" in
+    1|claude) DEV_PLATFORM=claude; break ;;
+    2|codex) DEV_PLATFORM=codex; break ;;
+    3|both) DEV_PLATFORM=both; break ;;
+    *) echo "錯誤：請輸入 1、2 或 3。" >&2 ;;
+  esac
+done
+
 read -p "專案名稱（英文，例 my-product）: " PROJECT_NAME || true
 PROJECT_NAME="${PROJECT_NAME:-my-product}"
 
@@ -141,16 +152,44 @@ echo ""
 read -p "啟用 openspec（給 Generator 做 SDD）？[y/N]: " ans_openspec || true
 case "${ans_openspec:-n}" in [Yy]*) ENABLE_OPENSPEC=y ;; *) ENABLE_OPENSPEC=n ;; esac
 
-read -p "啟用 Codex PR 審查（給 Evaluator 當第二模型）？[y/N]: " ans_codex || true
-case "${ans_codex:-n}" in [Yy]*) ENABLE_CODEX=y ;; *) ENABLE_CODEX=n ;; esac
+if [ "$DEV_PLATFORM" = "claude" ]; then
+  read -p "啟用 Codex PR 審查（給 Evaluator 當第二模型）？[y/N]: " ans_codex || true
+  case "${ans_codex:-n}" in [Yy]*) ENABLE_CODEX=y ;; *) ENABLE_CODEX=n ;; esac
+else
+  ENABLE_CODEX=y
+fi
+
+if [ "$DEV_PLATFORM" = "claude" ]; then
+  if [ "$ENABLE_CODEX" = "y" ]; then
+    CODEX_REVIEW_POLICY="Claude-only／Codex 為選用的第二模型額外審查：不取代既有 Claude 獨立驗收，亦非此 runtime 的必要 PR Gate。"
+  else
+    CODEX_REVIEW_POLICY="Claude-only／Codex review 未啟用：本節僅供參考，不阻擋交付。"
+  fi
+elif [ "$DEV_PLATFORM" = "codex" ]; then
+  CODEX_REVIEW_POLICY="Codex-only／正式 GitHub PR 必須通過 Codex review Gate。"
+else
+  CODEX_REVIEW_POLICY="雙平台／正式 GitHub PR 必須通過 Codex review Gate。"
+fi
 
 # ---------------------------------------------------------------------------
 # 3. 複製種子（含隱藏檔）+ 填佔位符
 # ---------------------------------------------------------------------------
 echo ""
 echo "複製種子到 $TARGET_ABS ..."
+STAGING_DIR="$(mktemp -d "${TMPDIR:-/tmp}/builder-pm-stage.XXXXXX")"
+cleanup_staging() {
+  rm -rf "$STAGING_DIR"
+}
+trap cleanup_staging EXIT
+
+cp -R "$TEMPLATE_DIR/." "$STAGING_DIR/"
+if [ "$DEV_PLATFORM" = "claude" ]; then
+  rm -f "$STAGING_DIR/AGENTS.md"
+  rm -rf "$STAGING_DIR/.agents"
+fi
+
 mkdir -p "$TARGET_ABS"
-cp -R "$TEMPLATE_DIR/." "$TARGET_ABS/"
+cp -R "$STAGING_DIR/." "$TARGET_ABS/"
 
 echo "填入佔位符 ..."
 find "$TARGET_ABS" -type f \( -name '*.md' -o -name '*.json' -o -name '*.cjs' \) -print0 \
@@ -166,7 +205,12 @@ if [ "$ENABLE_CODEX" = "y" ]; then
   mkdir -p "$TARGET_ABS/.codex"
   cat > "$TARGET_ABS/.codex/review-config.json" <<'JSON'
 {
-  "knowledgeSources": [],
+  "knowledgeSources": [
+    { "id": "core-governance", "title": "核心治理", "path": "CLAUDE.md", "kind": "governance" },
+    { "id": "skill-routing", "title": "Skill 路由", "path": "SKILLS.md", "kind": "skill-routing" },
+    { "id": "system-context", "title": "系統脈絡", "path": ".context/SYSTEM.md", "kind": "architecture" },
+    { "id": "project-conventions", "title": "專案約定", "path": ".context/CONVENTIONS.md", "kind": "conventions" }
+  ],
   "moduleDocHints": [],
   "errorPatternsPath": null
 }
@@ -178,7 +222,7 @@ fi
 # ---------------------------------------------------------------------------
 MODULES_FILE="$TARGET_ABS/MODULES.md"
 {
-  echo "# 可選模組（opt-in）狀態"
+  echo "# 模組與必要 Gate 狀態"
   echo ""
   echo "本檔由 setup.sh 自動產生，記錄安裝時選擇了哪些可選模組，以及每個模組的下一步操作。"
   echo "腳本**只印指令、不自動執行外部 CLI**；下列指令請你自行確認後執行。"
@@ -199,34 +243,48 @@ MODULES_FILE="$TARGET_ABS/MODULES.md"
     echo "狀態：未啟用，日後可手動加（重跑 setup.sh 選 y，或自行執行 \`npx openspec init\`）。"
   fi
   echo ""
-  echo "## Codex PR 審查（給 Evaluator 當第二模型）"
+  if [ "$DEV_PLATFORM" = "claude" ]; then
+    echo "## Codex PR 審查（Claude-only 選用第二模型）"
+  else
+    echo "## Codex PR 審查（Codex／雙平台必要 PR Gate）"
+  fi
   echo ""
   if [ "$ENABLE_CODEX" = "y" ]; then
-    echo "狀態：**已啟用**（已建立 \`.codex/review-config.json\` 安全預設骨架）"
-    echo ""
-    echo "### 一鍵安裝（Claude Code）"
-    echo ""
-    echo "在 Claude Code 內依序執行："
-    echo ""
-    echo '```'
-    echo "/plugin marketplace add Amber-Chang/codex-pr-review"
-    echo "/plugin install codex-pr-review@codex-pr-review"
-    echo '```'
-    echo ""
-    echo "（private repo，需先 \`gh auth login\`；背景自動更新才需設 \`GITHUB_TOKEN\`）"
-    echo ""
-    echo "接著：已在本專案建好 \`.codex/review-config.json\` 骨架 —— 編輯它，把本專案的 SPEC / PRD / 開發守則路徑加進 \`knowledgeSources\`（路徑相對於 repo root）。"
-    echo ""
-    echo "### 手動 / 非 Claude Code 環境（fallback）"
-    echo ""
-    echo "\`<plugin 目錄>\` 換成你要放的路徑，\`<plugin-dir>\` 指含 \`plugin.json\` 的安裝目錄，\`<PR編號>\` 換成實際 PR："
-    echo ""
-    echo '```bash'
-    echo "git clone https://github.com/Amber-Chang/codex-pr-review <plugin 目錄>"
-    echo "node <plugin-dir>/prepare-pr-review.cjs <PR編號> --write /tmp/pr-packet.json"
-    echo '```'
-    echo ""
-    echo "詳見 plugin README（含回貼 review 意見、找不到 config 的安全預設等）。"
+    if [ "$DEV_PLATFORM" = "claude" ]; then
+      echo "狀態：**已啟用**（已建立 \`.codex/review-config.json\` 安全預設骨架）"
+      echo ""
+      echo "### 一鍵安裝（Claude Code）"
+      echo ""
+      echo "在 Claude Code 內依序執行："
+      echo ""
+      echo '```'
+      echo "/plugin marketplace add Amber-Chang/codex-pr-review"
+      echo "/plugin install codex-pr-review@codex-pr-review"
+      echo '```'
+      echo ""
+      echo "（private repo，需先 \`gh auth login\`；背景自動更新才需設 \`GITHUB_TOKEN\`）"
+      echo ""
+      echo "接著：已在本專案建好 \`.codex/review-config.json\`，內含專案治理與脈絡的預設知識路徑。"
+      echo ""
+      echo "### 手動 / 非 Claude Code 環境（fallback）"
+      echo ""
+      echo "\`<plugin 目錄>\` 換成你要放的路徑，\`<plugin-dir>\` 指含 \`plugin.json\` 的安裝目錄，\`<PR編號>\` 換成實際 PR："
+      echo ""
+      echo '```bash'
+      echo "git clone https://github.com/Amber-Chang/codex-pr-review <plugin 目錄>"
+      echo "node <plugin-dir>/prepare-pr-review.cjs <PR編號> --write /tmp/pr-packet.json"
+      echo '```'
+      echo ""
+      echo "詳見 plugin README（含回貼 review 意見、找不到 config 的安全預設等）。"
+    else
+      echo "狀態：**PR REVIEW 待啟用**（設定檔已建立，外掛尚需在 Codex 載入）"
+      echo ""
+      echo '```bash'
+      echo "codex plugin marketplace add Amber-Chang/codex-pr-review"
+      echo '```'
+      echo ""
+      echo "加入 marketplace 後，依目前 Codex 版本完成啟用或 reload，並確認 \`pr-review-agent\` 已出現在 Codex 可用 skills。只加入 marketplace 不代表正式 gate 已就緒。"
+    fi
   else
     echo "狀態：未啟用，日後可手動加（重跑 setup.sh 選 y，或自行 clone plugin 並建 \`.codex/review-config.json\`）。"
   fi
@@ -268,20 +326,35 @@ echo "下一步："
 echo "  1. 讀 ONBOARDING.md（開工指南）—— 從空白到開始做怎麼走"
 echo "  2. 寫第一版 PRD（接 brainstorming）；先別填 SYSTEM/GLOSSARY，.context/ 會邊做邊長"
 if [ "$BROWNFIELD_DETECTED" = "y" ]; then
-  echo "  ⚡ 偵測到既有 git 專案 → 裝好後在 Claude 執行 /backfill-context，讓 AI 草擬 .context/ 三份文件"
+  case "$DEV_PLATFORM" in
+    claude) echo "  ⚡ 偵測到既有 git 專案 → 裝好後在 Claude 執行 /backfill-context，讓 AI 草擬 .context/ 三份文件" ;;
+    codex) echo "  ⚡ 偵測到既有 git 專案 → 請 Codex 依照 .claude/commands/backfill-context.md 草擬 .context/ 三份文件" ;;
+    both) echo "  ⚡ 偵測到既有 git 專案 → 可在 Claude 執行 /backfill-context，或請 Codex 依照 .claude/commands/backfill-context.md 執行" ;;
+  esac
 fi
-echo "  3. 在專案目錄執行：claude"
+case "$DEV_PLATFORM" in
+  claude) echo "  3. 在專案目錄執行：claude" ;;
+  codex) echo "  3. 用 Codex App 開啟專案，或在專案目錄執行：codex" ;;
+  both) echo "  3. 用 Claude Code 或 Codex 開啟專案（claude / codex）" ;;
+esac
 echo ""
 echo "已啟用模組的指令（細節見 $TARGET_ABS/MODULES.md）："
 if [ "$ENABLE_OPENSPEC" = "y" ]; then
   echo "  [openspec] 在專案根目錄執行： npx openspec init"
 fi
 if [ "$ENABLE_CODEX" = "y" ]; then
-  echo "  [codex]    一鍵安裝（Claude Code 內）："
-  echo "             /plugin marketplace add Amber-Chang/codex-pr-review"
-  echo "             /plugin install codex-pr-review@codex-pr-review"
-  echo "             然後編輯 .codex/review-config.json 加入專案知識路徑"
-  echo "             （手動 fallback 與 packet 指令見 MODULES.md）"
+  if [ "$DEV_PLATFORM" = "claude" ]; then
+    echo "  [codex]    一鍵安裝（Claude Code 內）："
+    echo "             /plugin marketplace add Amber-Chang/codex-pr-review"
+    echo "             /plugin install codex-pr-review@codex-pr-review"
+    echo "             .codex/review-config.json 已含預設專案知識路徑"
+    echo "             （手動 fallback 與 packet 指令見 MODULES.md）"
+  else
+    echo "  [codex]    PR REVIEW 待啟用："
+    echo "             codex plugin marketplace add Amber-Chang/codex-pr-review"
+    echo "             再依目前 Codex 版本啟用或 reload，並確認 pr-review-agent 可用"
+    echo "             只加入 marketplace 不代表正式 gate 已就緒"
+  fi
 fi
 if [ "$ENABLE_OPENSPEC" != "y" ] && [ "$ENABLE_CODEX" != "y" ]; then
   echo "  （未啟用任何可選模組）"
