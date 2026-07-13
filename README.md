@@ -45,6 +45,7 @@ template/    # ★ 完整安裝來源集；setup.sh 依平台裁剪後安裝
   AGENTS.md          # Codex / 雙平台安裝；Claude-only 從 staging 裁剪
   .agents/skills/    # Codex / 雙平台安裝；Claude-only 從 staging 裁剪
   SKILLS.md          # 角色 ↔ skill 對照(單一正本)
+  WORKFLOW.md        # 所有 AI 工具共用的開工與工作分支規則
   .context/          # 專案知識,隨專案長(SYSTEM / GLOSSARY / CONVENTIONS / modules)
   docs/01-prd/       # 正式產品需求(PRD-NNN-slug.md)
   docs/02-spec/      # 正式實作規格(SPEC-NNN-slug.md)
@@ -54,6 +55,8 @@ template/    # ★ 完整安裝來源集；setup.sh 依平台裁剪後安裝
 setup.sh     # 一鍵安裝腳本(複製 template/ → 新專案 + 填值 + git init)
 docs/        # 設計與說明(design.md = 正本)
 ```
+
+每次要修改追蹤檔案時，先依 `WORKFLOW.md` 確認目前在工作分支，完成驗證後以 PR 合併回 `main`。這條規則同時適用 Claude Code、Codex 與其他 AI 工具；GitHub 分支保護則由 repo 管理者另外設定。
 
 正式文件規則：PRD 放 `docs/01-prd/PRD-<三位數>-<slug>.md`，SPEC 放 `docs/02-spec/SPEC-<三位數>-<slug>.md`。每份 SPEC 必須以 frontmatter 的 `related_prd` 指向一份主要 PRD；一份 PRD 對多份 SPEC 的對照由檢查器導出，不維護人工第三張表。新安裝採新結構，既有專案不會自動遷移。
 

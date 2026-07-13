@@ -1,0 +1,24 @@
+name: Verify Template
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test setup.test.cjs
+      - run: node --test template/gates/branch-hygiene/check-branch.test.cjs
+      - run: node --test template/gates/drift-fact-check/check-drift-fact.test.cjs
+      - run: node --test template/loops/anti-bloat/check-rule-fitness.test.cjs
+      - run: node --test template/loops/context-growth/check-context-growth.test.cjs
+      - run: node --test template/loops/document-contract/check-document-contract.test.cjs
+      - run: node --test template/loops/learning-capture/check-lesson-quality.test.cjs
+      - run: node --test template/loops/skill-registry/check-skill-registry.test.cjs
+      - run: node --test template/onboarding/backfill/scan-evidence.test.cjs
