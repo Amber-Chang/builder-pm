@@ -33,5 +33,12 @@
 
 `knowledge-curation` 是 Planner 的選用工作流，不會自動把候選內容升格為正式知識或規格；必須先取得 PM 核准。
 
+<!-- project-skill-registry:start -->
+| skill | role | trigger | priority | canonical | codex_adapter | adoption_record |
+|---|---|---|---:|---|---|---|
+<!-- project-skill-registry:end -->
+
+registry 僅可列入已核准且已納入 Git 的 project Skill。`priority` 必須是正整數；相同 `role`、`trigger` 與 `priority` 的組合只能有一列。每個已列入的 project Skill 應連結其 canonical 來源、Codex adapter（如有）與採用紀錄。
+
 ## 先別用太重的
 - 重型多階段流程型 skill：只有確定要走標準開發流程時再用,別預設掛上。

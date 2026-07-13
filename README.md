@@ -3,6 +3,10 @@
 
 # builder-pm
 
+## 專案 Skill 採用
+
+外部 Skill 先在個人環境試用；PM 核准後，固定來源版本並完整納入專案 Git。專案以 `SKILLS.md` 的 project Skill registry 管理角色與觸發路由，並在納入前執行 `loops/skill-registry/check-skill-registry.cjs`；名稱、路由、adapter 或受保護 Claude Code 路徑衝突時會阻擋。此流程不掃描或管理個人全域 Skill，也不自動下載或升版外部來源。
+
 > 會 build 的 PM —— 一套輕量、可重用的「PM × AI 開發治理包」。
 
 給「用 AI 開發、產出最終要交給工程師」的 PM:**一頁核心 + 最小骨架 + 選用模組**,讓 AI 協作有紀律,但不臃腫到記不住、不嚇跑工程師。
