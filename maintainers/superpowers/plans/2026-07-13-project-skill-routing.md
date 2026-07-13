@@ -30,7 +30,7 @@ template/
   SKILLS.md
 setup.test.cjs
 README.md
-docs/design.md
+maintainers/design.md
 ```
 
 ## 1. 定義可解析的路由表與採用紀錄範本
@@ -184,7 +184,7 @@ git commit -m "feat: add project skill registry checker"
 **檔案：**
 - 修改：`setup.test.cjs`
 - 修改：`README.md`
-- 修改：`docs/design.md`
+- 修改：`maintainers/design.md`
 
 - [ ] **Step 1: 先寫安裝失敗測試**
 
@@ -215,7 +215,7 @@ Expected: FAIL，直到 template 納入 registry 範本與檢查器。
 
 - [ ] **Step 3: 更新使用者文件**
 
-README 與 `docs/design.md` 說明：外部 Skill 先個人試用，PM 核准後才固定版本並納入 Git；禁止自動下載或升版；`check-skill-registry` 在納入前手動執行並且衝突會阻擋。不要宣稱管理或掃描個人全域 Skill。
+README 與 `maintainers/design.md` 說明：外部 Skill 先個人試用，PM 核准後才固定版本並納入 Git；禁止自動下載或升版；`check-skill-registry` 在納入前手動執行並且衝突會阻擋。不要宣稱管理或掃描個人全域 Skill。
 
 - [ ] **Step 4: 執行 GREEN 與全量驗證**
 
@@ -238,7 +238,7 @@ Expected: 無輸出。
 - [ ] **Step 5: Commit**
 
 ```bash
-git add setup.test.cjs README.md docs/design.md
+git add setup.test.cjs README.md maintainers/design.md
 git commit -m "docs: document project skill adoption workflow"
 ```
 

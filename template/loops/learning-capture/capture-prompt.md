@@ -4,7 +4,7 @@
 # 捕捉指令（Capture Prompt）
 
 > 這是給 AI **載入後照做**的指令，不是文件。觸發時機：session 收尾、PM 糾正你、或冒出非顯而易見的修法。
-> 對標 Hermes `agent/background_review.py` 的 review prompt；設計鎖定在 `docs/design.md` §4.2。
+> 對標 Hermes `agent/background_review.py` 的 review prompt；設計鎖定在 `maintainers/design.md` §4.2。
 
 ## 你的任務
 

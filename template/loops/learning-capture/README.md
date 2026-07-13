@@ -5,7 +5,7 @@
 
 示範「**對的捕捉引擎長怎樣**」：cora 的「踩雷捕捉」靠 PM 手寫，結果 45 天停更、爛條堆積。這個引擎讓捕捉「**真的會動**」（用 hook 主動 nudge）+ 有**品質閘**擋爛教訓（確定性 linter）。
 
-> 這是**治理範本**，不是產品功能。完整設計（為何非建不可、Hermes 對標表、品質閘清單）鎖定在 `docs/design.md` §4.2，動手前先讀那節。
+> 這是**治理範本**，不是產品功能。完整設計（為何非建不可、Hermes 對標表、品質閘清單）鎖定在 `maintainers/design.md` §4.2，動手前先讀那節。
 
 ## grounding
 
@@ -88,5 +88,5 @@ node check-lesson-quality.test.cjs
 
 ## 設計連結
 
-- 完整設計：`docs/design.md` §4.2「學習捕捉引擎」。
+- 完整設計：`maintainers/design.md` §4.2「學習捕捉引擎」。
 - 姊妹範本：`loops/anti-bloat/`（規則防膨脹，捕捉的鏡像——往上加 vs 往下降）、`gates/drift-fact-check/`（字面事實一致性）。

@@ -35,7 +35,7 @@ template/
   ONBOARDING.md
   SKILLS.md
 README.md
-docs/design.md
+maintainers/design.md
 setup.sh
 setup.test.cjs
 ```
@@ -117,7 +117,7 @@ setup.test.cjs
 **檔案：**
 - 修改：`template/ONBOARDING.md`
 - 修改：`README.md`
-- 修改：`docs/design.md`
+- 修改：`maintainers/design.md`
 - 修改：`setup.sh`
 - 修改：`setup.test.cjs`
 

@@ -427,15 +427,15 @@ test('使用者文件完整說明 Claude Code 與 Codex 雙執行環境', () => 
   const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
   const onboarding = fs.readFileSync(path.join(ROOT, 'template/ONBOARDING.md'), 'utf8');
   const skills = fs.readFileSync(path.join(ROOT, 'template/SKILLS.md'), 'utf8');
+  const quickStart = markdownSection(readme, '快速開始');
+  const designPrinciples = markdownSection(readme, '設計原則');
   const installAndStructure = [
-    markdownSection(readme, '一鍵安裝'),
-    markdownSection(readme, '結構'),
+    quickStart,
   ].join('\n');
   const codexWorkflow = [
-    markdownSection(readme, '角色團隊(交付流水線)'),
-    markdownSection(readme, 'Codex 兩階段審查'),
+    designPrinciples,
   ].join('\n');
-  const modulesAndGate = markdownSection(readme, '模組與必要 Gate');
+  const modulesAndGate = designPrinciples;
 
   assert.match(readme, /Claude Code.*Codex|Codex.*Claude Code/s);
   assert.match(readme, /AGENTS\.md/);
@@ -446,6 +446,13 @@ test('使用者文件完整說明 Claude Code 與 Codex 雙執行環境', () => 
   assert.match(readme, /PR PASS/);
   assert.match(readme, /PR REVIEW BLOCKED/);
   assert.match(readme, /pr-review-agent/);
+  assert.match(readme, /^## 快速開始$/m);
+  assert.match(readme, /^### 一鍵安裝$/m);
+  assert.match(readme, /^### 安裝後你會得到什麼$/m);
+  assert.match(readme, /^## 設計原則$/m);
+  assert.match(readme, /^### 角色團隊\(交付流水線\)$/m);
+  assert.match(readme, /^### Codex 兩階段審查$/m);
+  assert.match(readme, /^### 模組與必要 Gate$/m);
   assert.match(
     readme,
     /(?=.*\.claude)(?=.*(?:保留|沿用))(?=.*(?:共用|共享).*(?:合約|契約))(?=.*(?:不是|非).*(?:runtime|執行入口))/is,
@@ -475,7 +482,7 @@ test('使用者文件完整說明 Claude Code 與 Codex 雙執行環境', () => 
   assert.doesNotMatch(onboarding, /\]\(docs\/design\.md(?:[^)]*)\)/);
   assert.match(
     onboarding,
-    /https:\/\/github\.com\/Amber-Chang\/builder-pm\/blob\/main\/docs\/design\.md/,
+    /https:\/\/github\.com\/Amber-Chang\/builder-pm\/blob\/main\/maintainers\/design\.md/,
   );
   assert.match(onboarding, /§6\.4/);
   assert.match(onboarding, /§6\.5/);

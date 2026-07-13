@@ -44,7 +44,7 @@ builder-pm **不是從零發明**。cora 是 2026-03 從模板 **`amber-stack`**
 
 ### 四個種子缺陷(全結案)
 
-來自盲區盤點(`docs/archive/gap-audit.md`),做實體檔時逐一處理 ——
+來自盲區盤點(`maintainers/archive/gap-audit.md`),做實體檔時逐一處理 ——
 
 | # | 缺陷 | 結論 | 詳見 |
 |---|------|------|------|
@@ -58,7 +58,7 @@ builder-pm **不是從零發明**。cora 是 2026-03 從模板 **`amber-stack`**
 - **範圍**:先萃取**通用種子骨架**;「套回 cora」降為**選用後路**(§9),非主線。
 - **深度**:**文件為主 + 極少硬關卡**(核心永遠 2 個;模組可各帶專屬硬關卡)。
 - **方案**:**B = 一頁核心 + 選用模組**,複雜度由「開幾個模組」決定。
-- **盲區報告**:`docs/archive/gap-audit.md`(28 個確認盲區);triage 尺 = 「**種子(day1 必備)vs 該隨專案長出來**」。
+- **盲區報告**:`maintainers/archive/gap-audit.md`(28 個確認盲區);triage 尺 = 「**種子(day1 必備)vs 該隨專案長出來**」。
 
 ---
 
@@ -85,7 +85,7 @@ builder-pm **不是從零發明**。cora 是 2026-03 從模板 **`amber-stack`**
 - 跨模型 reviewer 的 false-positive 校準 / Rescue 例外(有第二模型才需要)
 - drift 容忍中間層、real-path UAT、Engineer-led 輕量路徑、併發鎖定 / worktree、branch hygiene 三段式
 
-> 四個種子缺陷的結案狀態見 §0;完整 28 盲區 + triage 見 `docs/archive/gap-audit.md`。
+> 四個種子缺陷的結案狀態見 §0;完整 28 盲區 + triage 見 `maintainers/archive/gap-audit.md`。
 
 ---
 
@@ -552,8 +552,8 @@ template/
 - [x] 在 GitHub 開新 repo(builder-pm),做成真的可重用專案(PM 2026-06-26)
 - [x] Harness 角色分層定案 → §4(PM 手繪圖 2026-06-27)
 - [x] 重心校正 forward-first + 新增種子骨架 §1(PM 2026-06-27)
-- [x] 全治理盤點 → 28 盲區報告 `docs/archive/gap-audit.md`
-- [x] 全治理 **116 檔逐檔深讀** → `docs/archive/inventory-deep.md`;套入 6 條修正(2026-06-28)
+- [x] 全治理盤點 → 28 盲區報告 `maintainers/archive/gap-audit.md`
+- [x] 全治理 **116 檔逐檔深讀** → `maintainers/archive/inventory-deep.md`;套入 6 條修正(2026-06-28)
 - [x] **種子缺陷 4 修全結案**(2026-06-28):#1 防膨脹 ✅ §6.3 / #2 冷啟動 ✅ §6.4 / #3 捕捉引擎 ✅ §6.2 / #4 跨專案版本治理 ✅ §2.3 **決定刻意不做**
 - [x] 冷啟動 `.md` 收尾(2026-06-28):`onboarding/context-templates/` 四份空骨架 + `onboarding/ONBOARDING.md` → §6.4 種子實作全到位
 - [x] 把種子骨架寫成實體檔 + 4 角色空白員工合約 + `setup.sh` 安裝器(§2 架構鎖定)— **完成** 2026-06-29:薄核心 9 檔 + 51 rename 進 `template/`;`setup.sh` 三道把關過;builder-pm 已 push 上 GitHub
@@ -576,8 +576,8 @@ template/
 > 原本擠在文件頂部的逐日紀錄移來這;括號內為現行 §編號。
 
 - **2026-06-27** — 新增 Harness 角色分層(現 §4),基於 PM 手繪心智圖 + 全 `.claude/` 掃描。
-- **2026-06-27** — 重心校正:forward 種新專案為主線(非回套 cora);新增種子骨架(現 §1);盲區報告 `docs/archive/gap-audit.md`。
-- **2026-06-28** — 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `docs/archive/inventory-deep.md`;套入 6 條修正(模組⑥跨樹依賴 / OpenSpec 雙軌 / 雙語+去硬編+未啟用≠死碼 / error-patterns 修正 / fail-closed 閘+機密衛生 / 派工貼引文+model 分層)。
+- **2026-06-27** — 重心校正:forward 種新專案為主線(非回套 cora);新增種子骨架(現 §1);盲區報告 `maintainers/archive/gap-audit.md`。
+- **2026-06-28** — 全治理 **116 檔逐檔深讀**(取代片段盤點)→ `maintainers/archive/inventory-deep.md`;套入 6 條修正(模組⑥跨樹依賴 / OpenSpec 雙軌 / 雙語+去硬編+未啟用≠死碼 / error-patterns 修正 / fail-closed 閘+機密衛生 / 派工貼引文+model 分層)。
 - **2026-06-28** — 新增 Drift 守門(現 §8)+ `gates/drift-fact-check` 範本;翻 cora 出生史確認 **amber-stack = builder-pm v1**,v2 = v1 種子 + 三個自我維持迴圈。
 - **2026-06-28** — 新增防膨脹(規則降級)迴圈(現 §6.3)+ `loops/anti-bloat/` 範本(grounding:Hermes `Curator` OSS + cora 鐘擺 telemetry,雙背書)。
 - **2026-06-28** — 新增學習捕捉引擎(現 §6.2)+ `loops/learning-capture/` 範本;**自我修正**舊筆記「Hermes 沒自動 nudge=行銷話術」之誤。北極星 PM 角色校準=治理包非 runtime。三迴圈設計全鎖定。
