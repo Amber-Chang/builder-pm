@@ -11,7 +11,7 @@ const { spawnSync } = require('node:child_process');
 const ROOT = __dirname;
 
 const CLAUDE_BASELINE = new Map([
-  ['template/CLAUDE.md', 'afd0c7d715036356795456de112fa3c11eb589b196fe39024d0228fdc228b2cc'],
+  ['template/CLAUDE.md', '1e7241e77f90092ebb71321b13504803011414289ea0da67ef51cbdb9a5469c6'],
   ['template/.claude/agents/coordinator.md', '1c0e08b5b6d771e46ac51410a2c2e3573f81c6fd7d095d6af4791f5937d6ee43'],
   ['template/.claude/agents/evaluator.md', '383c41ceee779f3dedc6b45926a458b29abbf67c0f2389497486bc5935a42824'],
   ['template/.claude/agents/generator.md', '1de961689db180f4464656dfe98341eb07f5fdcdce82adf0e00e2e7c93fc59f7'],
@@ -70,6 +70,18 @@ test('Codex 入口存在且引用共用正本，不複製核心條文', () => {
   ]) {
     assert.doesNotMatch(agents, new RegExp(duplicatedRule));
   }
+});
+
+test('Claude 與 Codex 入口都引用唯一的工作分支規則', () => {
+  const workflow = fs.readFileSync(path.join(ROOT, 'template/WORKFLOW.md'), 'utf8');
+  const claude = fs.readFileSync(path.join(ROOT, 'template/CLAUDE.md'), 'utf8');
+  const agents = fs.readFileSync(path.join(ROOT, 'template/AGENTS.md'), 'utf8');
+
+  assert.match(workflow, /^# 工作流程$/m);
+  assert.match(claude, /WORKFLOW\.md/);
+  assert.match(agents, /WORKFLOW\.md/);
+  assert.doesNotMatch(claude, /第一次修改追蹤檔案前/);
+  assert.doesNotMatch(agents, /第一次修改追蹤檔案前/);
 });
 
 test('Codex 四角色 skills 有合法 frontmatter 與角色觸發', () => {
@@ -214,6 +226,8 @@ test('Claude 預設安裝保留原入口且不安裝 Codex 入口', () => {
     assert.equal(fs.existsSync(path.join(run.target, 'AGENTS.md')), false);
     assert.equal(fs.existsSync(path.join(run.target, '.agents')), false);
     assert.equal(fs.existsSync(path.join(run.target, '.codex/review-config.json')), false);
+    assert.equal(fs.existsSync(path.join(run.target, 'WORKFLOW.md')), true);
+    assert.equal(fs.existsSync(path.join(run.target, 'gates/branch-hygiene/check-branch.cjs')), true);
     const onboarding = readInstalledDoc(run.target, 'ONBOARDING.md');
     const modules = readInstalledDoc(run.target, 'MODULES.md');
     assertInstalledOnboarding(
@@ -222,6 +236,7 @@ test('Claude 預設安裝保留原入口且不安裝 Codex 入口', () => {
     );
     assert.match(modules, /^# 模組與必要 Gate 狀態$/m);
     assert.match(modules, /^## Codex PR 審查（Claude-only 選用第二模型）$/m);
+    assert.match(onboarding, /node gates\/branch-hygiene\/check-branch\.cjs \. --json/);
   } finally {
     run.cleanup();
   }

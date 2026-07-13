@@ -8,6 +8,8 @@
 
 語言、術語解釋、安全邊界與不確定事項的處理方式，皆由 `CLAUDE.md` 統一治理，本檔不重複列出。
 
+修改追蹤檔案前，必須讀取並遵循 `WORKFLOW.md`；它定義所有 runtime 共用的開工前分支檢查，不在本檔重複規則。
+
 ## 角色路由
 
 - PRD、SPEC 或需求範圍不清楚：讀取並使用 `.agents/skills/planner/SKILL.md`。

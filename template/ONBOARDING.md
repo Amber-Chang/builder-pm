@@ -20,6 +20,16 @@
 3. **(選用,建議留)跑一次極小的真任務** —— 例如改個 README 一行,走完整「派工 → 驗證 → 收進專案」一輪,讓你 day-1 就親眼看到這套 AI 流程真的會動、長什麼樣。覺得多餘可以跳。
 4. **記住:`.context/` 是空的、會邊做邊長** —— 別現在硬填 SYSTEM / GLOSSARY。
 
+## 每次動工前：先確認工作分支
+
+當需求、計畫與風險都確認後，第一次修改追蹤檔案前先執行：
+
+```bash
+node gates/branch-hygiene/check-branch.cjs . --json
+```
+
+如果結果是 `protected-branch`，請先依 `WORKFLOW.md` 從最新 `main` 建立工作分支，再開始實作。若工作區有其他人尚未提交的變更，停止並詢問，不要自行 stash、rebase、reset、checkout 或覆蓋檔案。`/explore` 的唯讀工作不需要建立分支。
+
 正式文件先記兩條規則：PRD 放 `docs/01-prd/`，SPEC 放 `docs/02-spec/`；每份 SPEC 都用 `related_prd` 指向一份主要 PRD。單一 PRD 對多份 SPEC 的對照由檢查器導出，不維護人工第三張表。新安裝採這個新結構，既有專案不會自動遷移，請由 PM 與工程師另行規劃。
 
 不要預先建立 `docs/inbox/`、`docs/research/` 或 `docs/decisions/`；首次真的需要時才建立。敏感逐字稿留在受控外部位置，Git 只放安全摘要。
