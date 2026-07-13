@@ -19,7 +19,7 @@
 |---|--------|------|--------|------|
 | 1 | `graduation_candidates` | **A** | `.governance/lessons/*.md` 的 frontmatter `strikes` | `strikes >= 2`（門檻常數）→ 這條雷一犯再犯，該長成 convention |
 | 2 | `glossary_candidates` | **A（有噪音）** | `.context/modules/*.md` + `docs/**/*.md` 的 backtick 識別字術語，減 `.context/GLOSSARY.md` 已收錄者 | 差集 = 候選新術語，**交 PM triage**（不自動收） |
-| 3 | `spec_coverage_gaps` | **B（proxy）** | 每個 `.context/modules/<name>.md` vs `docs/04-specs/SPEC-*.{md,yaml}` | 沒有任何 SPEC 的**檔名或內容**提到該 module → 缺口 |
+| 3 | `spec_coverage_gaps` | **B（proxy）** | 每個 `.context/modules/<name>.md` vs `docs/02-spec/SPEC-<三位數>-<slug>.{md,yaml}` | 沒有任何正式 SPEC 的**檔名或內容**提到該 module → 缺口 |
 | 4 | `system_section_candidates` | **C（proxy · 低信心）** | 每個 module vs `.context/SYSTEM.md` 內文 | SYSTEM 沒提到該 module → 可能該補一節 |
 
 ### 為什麼信心分三級

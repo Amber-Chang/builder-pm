@@ -275,6 +275,31 @@ test('Codex 安裝保留共用 Claude 合約並建立 Codex 入口與 review con
   }
 });
 
+test('新安裝包含正式文件契約與可選知識整理 Skill', () => {
+  const run = runSetup('2');
+  try {
+    assert.equal(run.status, 0, run.stderr);
+    for (const file of [
+      'docs/01-prd/README.md',
+      'docs/01-prd/PRD-TEMPLATE.md',
+      'docs/02-spec/README.md',
+      'docs/02-spec/SPEC-TEMPLATE.md',
+      'loops/document-contract/check-document-contract.cjs',
+      '.claude/skills/knowledge-curation/SKILL.md',
+      '.agents/skills/knowledge-curation/SKILL.md',
+    ]) {
+      assert.equal(fs.existsSync(path.join(run.target, file)), true, file);
+    }
+    for (const directory of ['docs/inbox', 'docs/research', 'docs/decisions']) {
+      assert.equal(fs.existsSync(path.join(run.target, directory)), false, directory);
+    }
+    const specTemplate = readInstalledDoc(run.target, 'docs/02-spec/SPEC-TEMPLATE.md');
+    assert.match(specTemplate, /^related_prd:/m);
+  } finally {
+    run.cleanup();
+  }
+});
+
 test('雙平台安裝同時保留兩邊入口', () => {
   const run = runSetup('3');
   try {

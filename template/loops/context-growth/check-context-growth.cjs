@@ -195,7 +195,8 @@ function checkSpecCoverage(projectRoot) {
   if (moduleFiles.length === 0) return [];
 
   // 預載所有 spec 的檔名 + 內容（小寫），避免每個 module 重讀
-  const specFiles = listFiles(path.join(projectRoot, 'docs', '04-specs'), ['.md', '.yaml']);
+  const specFiles = listFiles(path.join(projectRoot, 'docs', '02-spec'), ['.md', '.yaml'])
+    .filter((file) => /^SPEC-\d{3}-[a-z0-9-]+\.(?:md|yaml)$/.test(path.basename(file)));
   const specs = specFiles.map((file) => ({
     nameLc: path.basename(file).toLowerCase(),
     contentLc: (readFileSafe(file) || '').toLowerCase(),
@@ -209,7 +210,7 @@ function checkSpecCoverage(projectRoot) {
     if (!covered) {
       gaps.push({
         module,
-        reason: '(proxy) 沒有任何 docs/04-specs/SPEC-* 的檔名或內容提到此 module',
+        reason: '(proxy) 沒有任何 docs/02-spec/SPEC-* 的檔名或內容提到此 module',
       });
     }
   }

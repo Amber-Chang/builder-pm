@@ -15,6 +15,7 @@
 | 角色 | skill | 何時用 |
 |------|-------|--------|
 | Planner | `brainstorming` | 收斂方向、把想法變 PRD / SPEC |
+| Planner | `knowledge-curation`（opt-in）| 從知識來源整理候選摘要；PM 核准後才協助更新 PRD / SPEC |
 | Generator | `test-driven-development` | 主邏輯實作、易回歸的功能 |
 | Generator | `openspec`（opt-in）| 走正式 SDD：把功能轉成 change（proposal / spec / tasks）再實作 |
 | Evaluator | `requesting-code-review` | 功能完成、進 review gate 前 |
@@ -29,6 +30,8 @@
 | skill | 角色 | 何時用 |
 |-------|------|--------|
 | （範例）`ui-ux-pro-max` | Generator | 方向已清楚、要補視覺層次 / 設計系統時 |
+
+`knowledge-curation` 是 Planner 的選用工作流，不會自動把候選內容升格為正式知識或規格；必須先取得 PM 核准。
 
 <!-- project-skill-registry:start -->
 | skill | role | trigger | priority | canonical | codex_adapter | adoption_record |
