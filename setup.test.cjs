@@ -298,6 +298,23 @@ test('雙平台安裝同時保留兩邊入口', () => {
   }
 });
 
+test('新安裝包含 project Skill registry 範本與檢查器', () => {
+  const run = runSetup('2');
+  try {
+    assert.equal(run.status, 0, run.stderr);
+    for (const file of [
+      'SKILLS.md',
+      '.governance/skill-adoptions/README.md',
+      '.governance/skill-adoptions/SKILL-ADOPTION-TEMPLATE.md',
+      'loops/skill-registry/check-skill-registry.cjs',
+    ]) {
+      assert.equal(fs.existsSync(path.join(run.target, file)), true, file);
+    }
+  } finally {
+    run.cleanup();
+  }
+});
+
 test('無效平台會顯示錯誤並重新詢問', () => {
   const run = runSetup('x\n2');
   try {

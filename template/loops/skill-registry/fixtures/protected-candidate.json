@@ -1,0 +1,10 @@
+{
+  "files": [
+    "template/.claude/agents",
+    "template/.claude/skills/brainstorming/SKILL.md",
+    "template/.claude/skills/code-review",
+    "template/.claude/skills/tdd/helpers/assert.cjs",
+    "template/.claude/skills/unprotected/SKILL.md",
+    "template/.claude/settings.json"
+  ]
+}

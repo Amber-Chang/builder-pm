@@ -6,6 +6,10 @@
 
 ---
 
+## 專案 Skill 治理
+
+正式 project Skill 必須先由 PM 核准、固定外部來源版本，再納入 Git。`SKILLS.md` 提供人類可讀的路由表；`loops/skill-registry/check-skill-registry.cjs` 以 fail-closed 檢查重複名稱、路由衝突、採用紀錄、canonical / Codex adapter 與受保護 Claude Code 路徑。個人全域 Skill 不在本專案管理範圍。
+
 ## 0. 這個包是什麼(全局脈絡)
 
 > 後面各節都建立在這條主線上;這裡講一次,後面只引用、不重述。
