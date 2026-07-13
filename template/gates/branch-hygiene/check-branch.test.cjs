@@ -29,8 +29,11 @@ function createRepo(branch = 'work') {
   return projectRoot;
 }
 
-function run(args) {
-  const result = spawnSync('node', [CHECKER, ...args], { encoding: 'utf8' });
+function run(args, env = {}) {
+  const result = spawnSync(process.execPath, [CHECKER, ...args], {
+    encoding: 'utf8',
+    env: { ...process.env, ...env },
+  });
   return {
     code: result.status,
     stdout: result.stdout || '',
@@ -38,8 +41,8 @@ function run(args) {
   };
 }
 
-function runJson(projectRoot) {
-  const result = run([projectRoot, '--json']);
+function runJson(projectRoot, env = {}) {
+  const result = run([projectRoot, '--json'], env);
   let json;
   try {
     json = JSON.parse(result.stdout);
@@ -47,6 +50,29 @@ function runJson(projectRoot) {
     throw new Error(`JSON 輸出無法解析（exit ${result.code}）：${result.stdout}${result.stderr}`);
   }
   return { ...result, json };
+}
+
+function createSymbolicRefFailureWrapper() {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'branch-hygiene-git-wrapper-'));
+  const realGit = spawnSync('which', ['git'], { encoding: 'utf8' }).stdout.trim();
+  assert.ok(realGit, '測試環境必須能找到 git 可執行檔');
+
+  const wrapper = path.join(directory, 'git');
+  fs.writeFileSync(
+    wrapper,
+    [
+      `#!${process.execPath}`,
+      "'use strict';",
+      "const { spawnSync } = require('node:child_process');",
+      'const args = process.argv.slice(2);',
+      "if (args[2] === 'symbolic-ref') process.exit(2);",
+      "const result = spawnSync(process.env.REAL_GIT, args, { stdio: 'inherit' });",
+      'process.exit(result.status === null ? 127 : result.status);',
+      '',
+    ].join('\n')
+  );
+  fs.chmodSync(wrapper, 0o755);
+  return { directory, realGit };
 }
 
 function withTempDir(callback) {
@@ -133,6 +159,29 @@ test('detached HEAD：回報 detached-head，CLI exit 1 並提供繁中指示', 
     });
   } finally {
     fs.rmSync(projectRoot, { recursive: true, force: true });
+  }
+});
+
+test('symbolic-ref 非 1 失敗：回報 git-command-failed，並指示檢查 Git 與工作區', () => {
+  const projectRoot = createRepo('work');
+  const wrapper = createSymbolicRefFailureWrapper();
+  const env = {
+    PATH: wrapper.directory,
+    REAL_GIT: wrapper.realGit,
+  };
+  try {
+    const result = run([projectRoot], env);
+
+    assert.strictEqual(result.code, 1);
+    assert.match(result.stdout, /Git 分支查詢失敗/);
+    assert.match(result.stdout, /請檢查 Git 與工作區/);
+    assert.deepStrictEqual(runJson(projectRoot, env).json, {
+      branch: null,
+      reason: 'git-command-failed',
+    });
+  } finally {
+    fs.rmSync(projectRoot, { recursive: true, force: true });
+    fs.rmSync(wrapper.directory, { recursive: true, force: true });
   }
 });
 

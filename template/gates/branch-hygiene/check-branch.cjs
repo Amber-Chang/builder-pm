@@ -19,8 +19,11 @@ function inspectBranch(projectRoot) {
   }
 
   const symbolicRef = runGit(root, ['symbolic-ref', '--quiet', '--short', 'HEAD']);
-  if (symbolicRef.status !== 0) {
+  if (symbolicRef.status === 1) {
     return { branch: null, reason: 'detached-head' };
+  }
+  if (symbolicRef.status !== 0) {
+    return { branch: null, reason: 'git-command-failed' };
   }
 
   const branch = symbolicRef.stdout.trim();
@@ -43,6 +46,13 @@ function renderReport(projectRoot, result) {
       `目錄：${projectRoot}`,
       '結果：目前處於 detached HEAD。',
       '指示：請切換到工作分支後再繼續。',
+    ].join('\n');
+  }
+  if (result.reason === 'git-command-failed') {
+    return [
+      `目錄：${projectRoot}`,
+      '結果：Git 分支查詢失敗。',
+      '指示：請檢查 Git 與工作區後再試一次。',
     ].join('\n');
   }
   if (result.reason === 'protected-branch') {
